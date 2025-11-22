@@ -224,6 +224,7 @@ class ResourceManager:
         cls._sounds["hit"]       = load_sound("hit.wav")
         cls._sounds["bullet"]    = load_sound("bullet.wav")
         cls._sounds["pickup"]    = load_sound("pickup.wav")
+        cls._sounds["laser"]     = load_sound("laser.wav")
 
     # ------------------------------------------------------
     #  Getter ต่าง ๆ

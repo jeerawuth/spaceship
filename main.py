@@ -68,6 +68,7 @@ def main():
     explosion_frames = ResourceManager.get_explosion_frames()
     explosion_sound = ResourceManager.get_sound("explosion")
     pickup_sound = ResourceManager.get_sound("pickup")
+    laser_sound = ResourceManager.get_sound("laser")
 
     # --------------------------------------------------
     # ฟอนต์ + UI Manager
@@ -96,9 +97,6 @@ def main():
     # --------------------------------------------------
     hero = HeroNode()
     heros.add(hero)
-
-    enemy = EnemyNode()
-    enemies.add(enemy)
 
     # --------------------------------------------------
     # ตัวแปรเกม (ด่าน + เวลา)
@@ -222,17 +220,22 @@ def main():
         # --------------------------------------------------
         # จัดการ LaserBeam ตาม weapon_mode ของ Hero
         # --------------------------------------------------
+        # ใน main loop, ตอนจัดการโหมดเลเซอร์
         if game_state == GAME_STATE_PLAYING and hero.alive():
             if getattr(hero, "weapon_mode", "normal") == "laser":
+                # ถ้ายังไม่มีเลเซอร์ → สร้างขึ้นมา 1 ชิ้น
                 if len(laser_beams) == 0:
-                    beam = LaserBeamNode(hero)
+                    beam = LaserBeamNode(hero, laser_sound)
                     laser_beams.add(beam)
             else:
-                if len(laser_beams) > 0:
-                    laser_beams.empty()
+                # ไม่ต้อง laser แล้ว
+                # ไม่ควรใช้ laser_beams.empty() เฉย ๆ เพราะมันไม่เรียก kill()
+                for beam in laser_beams.sprites():
+                    beam.kill()
         else:
-            if len(laser_beams) > 0:
-                laser_beams.empty()
+            # กรณีเกมโอเวอร์/อื่น ๆ → เคลียร์เลเซอร์ทิ้ง
+            for beam in laser_beams.sprites():
+                beam.kill()
 
         # --------------------------------------------------
         # Spawn ต่าง ๆ (Meteor / Item)
