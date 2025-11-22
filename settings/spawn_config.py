@@ -5,11 +5,11 @@ STAGE_SPAWN_CONFIGS = {
         "meteor_interval": 1.0,   # วินาที / 1 ลูก
         "item_interval":   5.0,   # วินาที / 1 ไอเท็ม
         "item_weights": {
-            "single": 0.4,
+            "single": 0.1,
             "double": 0.2,
             "shield": 0.2,
             "speed":  0.1,
-            "laser":  0.1,
+            "laser":  0.4,
         }
     },
     2: {  # ด่าน 2 ยากขึ้น: Meteor ถี่ขึ้น ไอเท็มน้อยลง

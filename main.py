@@ -15,8 +15,13 @@ from managers.sound_manager import SoundManager
 from managers.ui_manager import UIManager
 
 from nodes.hero_node import HeroNode
+from nodes.enemy_node import EnemyNode
+from nodes.meteor_node import MeteorNode
 from nodes.bullet_node import BulletNode
+from nodes.item_node import ItemNode
 from nodes.boss_node import BossNode
+from nodes.boss_bullet_node import BossBulletNode  # เผื่อ BossNode ใช้ภายใน
+from nodes.laser_beam_node import LaserBeamNode
 
 
 # Boss จะโผล่เมื่อเวลาผ่านไปกี่ % ของด่าน (0.7 = 70% ท้ายด่าน)
@@ -30,9 +35,9 @@ def create_boss_for_stage(stage: int, hero: HeroNode, boss_bullets: pygame.sprit
     """
     cfg = BOSS_STAGE_CONFIGS.get(stage, {})
 
-    max_hp        = cfg.get("max_hp", 50)
+    max_hp = cfg.get("max_hp", 50)
     fire_interval = cfg.get("fire_interval", 5.0)
-    bullet_pairs  = cfg.get("bullet_pairs", 1)
+    bullet_pairs = cfg.get("bullet_pairs", 1)
 
     boss = BossNode(
         hero=hero,
@@ -74,22 +79,26 @@ def main():
     # --------------------------------------------------
     # กลุ่ม Sprite ต่าง ๆ
     # --------------------------------------------------
-    heros         = pygame.sprite.Group()
-    enemies       = pygame.sprite.Group()
-    bosses        = pygame.sprite.Group()
-    bullets       = pygame.sprite.Group()
-    boss_bullets  = pygame.sprite.Group()
-    meteors       = pygame.sprite.Group()
-    items         = pygame.sprite.Group()
-    drones        = pygame.sprite.Group()
-    shields       = pygame.sprite.Group()
-    explosions    = pygame.sprite.Group()
+    heros = pygame.sprite.Group()
+    enemies = pygame.sprite.Group()
+    bosses = pygame.sprite.Group()
+    bullets = pygame.sprite.Group()
+    boss_bullets = pygame.sprite.Group()
+    meteors = pygame.sprite.Group()
+    items = pygame.sprite.Group()
+    drones = pygame.sprite.Group()
+    shields = pygame.sprite.Group()
+    explosions = pygame.sprite.Group()
+    laser_beams = pygame.sprite.Group()   # ★ เลเซอร์ Beam
 
     # --------------------------------------------------
-    # สร้าง Hero เริ่มต้น
+    # สร้าง Hero / Enemy เริ่มต้น
     # --------------------------------------------------
     hero = HeroNode()
     heros.add(hero)
+
+    enemy = EnemyNode()
+    enemies.add(enemy)
 
     # --------------------------------------------------
     # ตัวแปรเกม (ด่าน + เวลา)
@@ -103,13 +112,13 @@ def main():
     total_time = 0.0
     max_stage = len(STAGE_SPAWN_CONFIGS)
 
-    GAME_STATE_PLAYING   = "PLAYING"
+    GAME_STATE_PLAYING = "PLAYING"
     GAME_STATE_GAME_OVER = "GAME_OVER"
-    GAME_STATE_WIN       = "WIN"
+    GAME_STATE_WIN = "WIN"
     game_state = GAME_STATE_PLAYING
 
     # สำหรับด่านที่มีบอส
-    boss_spawned = False  # บอกว่าบอสด่านนี้ถูกสร้างแล้วหรือยัง
+    boss_spawned = False
 
     # --------------------------------------------------
     # SpawnManager สำหรับด่านแรก
@@ -152,13 +161,9 @@ def main():
                     bosses.add(create_boss_for_stage(current_stage, hero, boss_bullets))
                     boss_spawned = True
 
-                # 2) ด่านที่มีบอส "ห้ามเปลี่ยนด่านด้วยเวลา"
-                #    จะเปลี่ยนด่านได้ก็ต่อเมื่อ:
-                #    - บอสถูกสร้างแล้ว (boss_spawned == True)
-                #    - บอสตายแล้ว (len(bosses) == 0)
+                # 2) เปลี่ยนด่านเมื่อบอสตาย
                 if boss_spawned and len(bosses) == 0:
                     if current_stage < max_stage:
-                        # ยังมีด่านถัดไป → ไปด่านถัดไป
                         current_stage += 1
                         stage_timer = 0.0
                         boss_spawned = False
@@ -166,12 +171,11 @@ def main():
                         boss_bullets.empty()
                         spawn_manager.set_stage(current_stage)
                     else:
-                        # ด่านสุดท้าย + บอสตายแล้ว → ชนะเกม
+                        # บอด่านสุดท้ายตาย → ชนะเกม
                         game_state = GAME_STATE_WIN
 
             # ----- กรณีด่านนี้ "ไม่มีบอส" -----
             else:
-                # ใช้เวลา STAGE_DURATION ในการเปลี่ยนด่าน
                 if stage_timer >= STAGE_DURATION:
                     if current_stage < max_stage:
                         stage_timer = 0.0
@@ -182,7 +186,7 @@ def main():
                         bosses.empty()
                         boss_bullets.empty()
                     else:
-                        # ไม่มีบอส + อยู่ด่านสุดท้าย + เวลาครบ → ชนะเกม
+                        # ด่านสุดท้าย + ไม่มีบอส → ชนะเกมเมื่อเวลาครบ
                         game_state = GAME_STATE_WIN
 
         # --------------------------------------------------
@@ -192,34 +196,43 @@ def main():
             move_dir = InputManager.get_move_direction()
 
             bullet_cooldown -= dt
-            if keys[pygame.K_SPACE] and bullet_cooldown <= 0:
-                if hero.alive():
-                    bullet_cooldown = BULLET_COOLDOWN
+            # ยิงเฉพาะตอน weapon_mode == "normal"
+            if (
+                keys[pygame.K_SPACE]
+                and bullet_cooldown <= 0
+                and hero.alive()
+                and getattr(hero, "weapon_mode", "normal") == "normal"
+            ):
+                bullet_pos = hero.rect.midtop
+                bullet = BulletNode(bullet_pos)
+                bullets.add(bullet)
 
-                    if hero.weapon_mode == "normal":
-                        # ยิงปกติ 1 นัด
-                        bullet_pos = hero.rect.midtop
-                        bullet = BulletNode(bullet_pos)
-                        bullets.add(bullet)
+                bullet_cooldown = BULLET_COOLDOWN
 
-                    elif hero.weapon_mode == "laser":
-                        # ตัวอย่าง: ยิง 3 นัดตรง ๆ (เหมือนลำแสงกว้างขึ้น)
-                        offsets = [-10, 0, 10]
-                        for off in offsets:
-                            pos = (hero.rect.centerx + off, hero.rect.top)
-                            bullet = BulletNode(pos)
-                            bullets.add(bullet)
-
-                    bullet_sound = ResourceManager.get_sound("bullet")
-                    SoundManager.play(
-                        bullet_sound,
-                        volume=0.8,
-                        max_simultaneous=8,
-                        priority=7,
-                    )
-
+                bullet_sound = ResourceManager.get_sound("bullet")
+                SoundManager.play(
+                    bullet_sound,
+                    volume=0.8,
+                    max_simultaneous=8,
+                    priority=7,
+                )
         else:
             move_dir = pygame.math.Vector2(0, 0)
+
+        # --------------------------------------------------
+        # จัดการ LaserBeam ตาม weapon_mode ของ Hero
+        # --------------------------------------------------
+        if game_state == GAME_STATE_PLAYING and hero.alive():
+            if getattr(hero, "weapon_mode", "normal") == "laser":
+                if len(laser_beams) == 0:
+                    beam = LaserBeamNode(hero)
+                    laser_beams.add(beam)
+            else:
+                if len(laser_beams) > 0:
+                    laser_beams.empty()
+        else:
+            if len(laser_beams) > 0:
+                laser_beams.empty()
 
         # --------------------------------------------------
         # Spawn ต่าง ๆ (Meteor / Item)
@@ -317,6 +330,28 @@ def main():
                 explosion_frames, explosion_sound
             )
 
+            # -------- LaserBeam vs Enemy/Meteor/Boss --------
+            score = CollisionManager.handle_laser_enemy_collisions(
+                laser_beams, enemies,
+                explosions,
+                explosion_frames, explosion_sound,
+                score
+            )
+
+            score = CollisionManager.handle_laser_meteor_collisions(
+                laser_beams, meteors,
+                explosions,
+                explosion_frames, explosion_sound,
+                score
+            )
+
+            score = CollisionManager.handle_laser_boss_collisions(
+                laser_beams, bosses,
+                explosions,
+                explosion_frames, explosion_sound,
+                score
+            )
+
         # --------------------------------------------------
         # Update Sprites
         # --------------------------------------------------
@@ -330,8 +365,8 @@ def main():
             meteors.update(dt)
             items.update(dt)
             shields.update(dt)
+            laser_beams.update(dt)
 
-            # ถ้า Hero ตาย → Game Over
             if not hero.alive():
                 game_state = GAME_STATE_GAME_OVER
 
@@ -351,9 +386,10 @@ def main():
         drones.draw(screen)
         bullets.draw(screen)
         boss_bullets.draw(screen)
+        laser_beams.draw(screen)   # ★ วาดเลเซอร์
         explosions.draw(screen)
 
-        # วาด HUD + Boss HP Bar + Game Over / You Win ผ่าน UIManager
+        # HUD + Boss HP + Game Over / Win
         ui.render(
             screen=screen,
             hero=hero,
@@ -365,8 +401,6 @@ def main():
             drones=drones,
             shields=shields,
         )
-
-
 
         pygame.display.flip()
 
