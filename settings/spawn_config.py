@@ -18,6 +18,15 @@ STAGE_SPAWN_CONFIGS = {
             "double": 0.4,
             "shield": 0.2,
         }
-    },
+    }
+    # 3: {  # ด่าน 3 ยากขึ้น: Meteor ถี่ขึ้น ไอเท็มน้อยลง
+    #     "meteor_interval": 0.6,
+    #     "item_interval":   6.0,
+    #     "item_weights": {
+    #         "single": 0.4,
+    #         "double": 0.3,
+    #         "shield": 0.3,
+    #     }
+    # },
     # เพิ่มด่าน 3, 4, ... ได้ตามใจ
 }

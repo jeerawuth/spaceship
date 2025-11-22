@@ -33,7 +33,6 @@ class CollisionManager:
                     expl = ExplosionNode(enemy.rect.center, explosion_frames)
                     explosions.add(expl)
 
-                # เสียงระเบิดศัตรูทั่วไป
                 SoundManager.play(
                     explosion_sound,
                     volume=0.9,
@@ -71,7 +70,7 @@ class CollisionManager:
                     explosion_sound,
                     volume=1.0,
                     max_simultaneous=8,
-                    priority=10,   # ชนตัวเอง → ให้สำคัญหน่อย
+                    priority=10,
                 )
 
     # -------------------------------------------------
@@ -139,7 +138,7 @@ class CollisionManager:
         return score
 
     # -------------------------------------------------
-    # 5) Hero vs Item  → Drone / Shield
+    # 5) Hero vs Item → Drone / Shield
     # -------------------------------------------------
     @staticmethod
     def handle_hero_item_collisions(
@@ -159,7 +158,6 @@ class CollisionManager:
                 if item_type is None:
                     continue
 
-                # เสียงเก็บไอเท็ม
                 SoundManager.play(
                     pickup_sound,
                     volume=0.7,
@@ -241,7 +239,7 @@ class CollisionManager:
                 )
 
     # -------------------------------------------------
-    # 8) Bullet vs Boss  (ลดจำนวนเสียง Boss Explosion ลง)
+    # 8) Bullet vs Boss
     # -------------------------------------------------
     @staticmethod
     def handle_bullet_boss_collisions(
@@ -266,7 +264,6 @@ class CollisionManager:
                     expl = ExplosionNode(boss.rect.center, explosion_frames)
                     explosions.add(expl)
 
-                # 🔇 ลดจำนวนเสียงระเบิด Boss: จำกัดแค่ 3 instance พร้อมกัน และเบาลง
                 SoundManager.play(
                     explosion_sound,
                     volume=0.6,
@@ -311,7 +308,7 @@ class CollisionManager:
                 )
 
     # -------------------------------------------------
-    # 10) Shield vs Boss  (ลดเสียง Boss Explosion เช่นกัน)
+    # 10) Shield vs Boss
     # -------------------------------------------------
     @staticmethod
     def handle_shield_boss_collisions(
@@ -338,7 +335,6 @@ class CollisionManager:
                     expl = ExplosionNode(boss.rect.center, explosion_frames)
                     explosions.add(expl)
 
-                # 🔇 Boss Explosion จาก Shield: จำกัดให้เล่นซ้อนกันได้น้อย
                 SoundManager.play(
                     explosion_sound,
                     volume=0.6,
@@ -350,3 +346,75 @@ class CollisionManager:
                     score += 50
 
         return score
+
+    # -------------------------------------------------
+    # 11) Hero vs BossBullet
+    # -------------------------------------------------
+    @staticmethod
+    def handle_hero_bossbullet_collisions(
+        heros, boss_bullets,
+        explosions,
+        explosion_frames, explosion_sound
+    ):
+        """
+        กระสุน Boss ชน Hero:
+        - ลบ Hero และกระสุน
+        - ระเบิด
+        - (Game Over จะถูกเช็คใน main ตามเดิม)
+        """
+        hits = pygame.sprite.groupcollide(
+            heros, boss_bullets,
+            True, True,
+            pygame.sprite.collide_rect
+        )
+
+        for hero, bullet_list in hits.items():
+            for bullet in bullet_list:
+                cx = (hero.rect.centerx + bullet.rect.centerx) // 2
+                cy = (hero.rect.centery + bullet.rect.centery) // 2
+
+                if explosion_frames:
+                    expl = ExplosionNode((cx, cy), explosion_frames)
+                    explosions.add(expl)
+
+                SoundManager.play(
+                    explosion_sound,
+                    volume=1.0,
+                    max_simultaneous=5,
+                    priority=10,
+                )
+
+    # -------------------------------------------------
+    # 12) Shield vs BossBullet
+    # -------------------------------------------------
+    @staticmethod
+    def handle_shield_bossbullet_collisions(
+        shields, boss_bullets,
+        explosions,
+        explosion_frames, explosion_sound
+    ):
+        """
+        กระสุน Boss ชน Shield:
+        - ลบกระสุน
+        - Shield เสีย HP
+        """
+        hits = pygame.sprite.groupcollide(
+            shields, boss_bullets,
+            False, True,
+            pygame.sprite.collide_circle
+        )
+
+        for shield, bullet_list in hits.items():
+            for bullet in bullet_list:
+                shield.take_hit(1)
+
+                if explosion_frames:
+                    expl = ExplosionNode(bullet.rect.center, explosion_frames)
+                    explosions.add(expl)
+
+                SoundManager.play(
+                    explosion_sound,
+                    volume=0.7,
+                    max_simultaneous=5,
+                    priority=4,
+                )

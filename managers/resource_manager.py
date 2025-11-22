@@ -5,18 +5,17 @@ import os
 
 # -----------------------------------------
 #  ค่า scale สำหรับ asset ต่าง ๆ
-#  ปรับค่าตัวเลข 0.5 = 50% / 2.0 = 200%
 # -----------------------------------------
-HERO_SCALE      = 0.12
-ENEMY_SCALE     = 0.20
-METEOR_SCALE    = 0.08
-BULLET_SCALE    = 0.10
-ITEM_SCALE      = 0.10
-EXPLOSION_SCALE = 0.20
-DRONE_SCALE     = 0.10
-SHIELD_SCALE    = 0.4
-
-BOSS_SCALE      = 0.35
+HERO_SCALE       = 0.12
+ENEMY_SCALE      = 0.20
+METEOR_SCALE     = 0.08
+BULLET_SCALE     = 0.10          # กระสุน Hero
+BOSS_BULLET_SCALE = 0.12         # ★ กระสุน Boss
+ITEM_SCALE       = 0.10
+EXPLOSION_SCALE  = 0.20
+DRONE_SCALE      = 0.10
+SHIELD_SCALE     = 0.4
+BOSS_SCALE       = 0.35
 
 
 def scale_image(image: pygame.Surface, scale_factor: float) -> pygame.Surface:
@@ -62,10 +61,8 @@ class ResourceManager:
         # --------------------------------------------------
         hero_dir = os.path.join(assets_dir, "images", "hero")
         hero_frames = []
-
         for i in range(1, 5):
-            filename = f"hero_0{i}.png"
-            path = os.path.join(hero_dir, filename)
+            path = os.path.join(hero_dir, f"hero_0{i}.png")
             if os.path.exists(path):
                 img = pygame.image.load(path).convert_alpha()
                 hero_frames.append(img)
@@ -79,10 +76,8 @@ class ResourceManager:
         # --------------------------------------------------
         enemy_dir = os.path.join(assets_dir, "images", "enemy")
         enemy_frames = []
-
         for i in range(1, 5):
-            filename = f"enemy_0{i}.png"
-            path = os.path.join(enemy_dir, filename)
+            path = os.path.join(enemy_dir, f"enemy_0{i}.png")
             if os.path.exists(path):
                 img = pygame.image.load(path).convert_alpha()
                 enemy_frames.append(img)
@@ -96,10 +91,8 @@ class ResourceManager:
         # --------------------------------------------------
         boss_dir = os.path.join(assets_dir, "images", "boss")
         boss_frames = []
-
         for i in range(1, 5):
-            filename = f"boss_0{i}.png"
-            path = os.path.join(boss_dir, filename)
+            path = os.path.join(boss_dir, f"boss_0{i}.png")
             if os.path.exists(path):
                 img = pygame.image.load(path).convert_alpha()
                 boss_frames.append(img)
@@ -113,10 +106,8 @@ class ResourceManager:
         # --------------------------------------------------
         meteor_dir = os.path.join(assets_dir, "images", "meteor")
         meteor_frames = []
-
         for i in range(1, 5):
-            filename = f"meteor_0{i}.png"
-            path = os.path.join(meteor_dir, filename)
+            path = os.path.join(meteor_dir, f"meteor_0{i}.png")
             if os.path.exists(path):
                 img = pygame.image.load(path).convert_alpha()
                 meteor_frames.append(img)
@@ -129,10 +120,8 @@ class ResourceManager:
         # --------------------------------------------------
         drone_dir = os.path.join(assets_dir, "images", "drone")
         drone_frames = []
-
         for i in range(1, 5):
-            filename = f"drone_0{i}.png"
-            path = os.path.join(drone_dir, filename)
+            path = os.path.join(drone_dir, f"drone_0{i}.png")
             if os.path.exists(path):
                 img = pygame.image.load(path).convert_alpha()
                 drone_frames.append(img)
@@ -141,7 +130,7 @@ class ResourceManager:
         cls._images["drone_frames"] = drone_frames
 
         # --------------------------------------------------
-        # BULLET: bullet_01.png (ภาพเดียว)
+        # BULLET (Hero): bullet_01.png
         # --------------------------------------------------
         bullet_path = os.path.join(assets_dir, "images", "bullet", "bullet_01.png")
         if os.path.exists(bullet_path):
@@ -151,11 +140,23 @@ class ResourceManager:
             cls._images["bullet"] = None
 
         # --------------------------------------------------
-        # ITEM: ชนิดต่าง ๆ (single / double / shield)
-        #   ชื่อไฟล์:
-        #   item_single_01.png - item_single_04.png
-        #   item_double_01.png - item_double_04.png
-        #   item_shield_01.png - item_shield_04.png
+        # BOSS BULLET: boss_bullet_01.png - boss_bullet_04.png
+        #   โฟลเดอร์: assets/images/boss_bullet/
+        # --------------------------------------------------
+        boss_bullet_dir = os.path.join(assets_dir, "images", "boss_bullet")
+        boss_bullet_frames = []
+        for i in range(1, 5):
+            path = os.path.join(boss_bullet_dir, f"boss_bullet_0{i}.png")
+            if os.path.exists(path):
+                img = pygame.image.load(path).convert_alpha()
+                boss_bullet_frames.append(img)
+
+        boss_bullet_frames = scale_frames(boss_bullet_frames, BOSS_BULLET_SCALE)
+        cls._images["boss_bullet_frames"] = boss_bullet_frames
+        cls._images["boss_bullet"] = boss_bullet_frames[0] if boss_bullet_frames else None
+
+        # --------------------------------------------------
+        # ITEM: item_single_0x.png / item_double_0x.png / item_shield_0x.png
         # --------------------------------------------------
         item_dir = os.path.join(assets_dir, "images", "item")
         cls._images["item_frames"] = {}
@@ -169,8 +170,7 @@ class ResourceManager:
         for item_type, pattern in item_patterns.items():
             frames = []
             for i in range(1, 5):
-                filename = pattern.format(i)
-                path = os.path.join(item_dir, filename)
+                path = os.path.join(item_dir, pattern.format(i))
                 if os.path.exists(path):
                     img = pygame.image.load(path).convert_alpha()
                     frames.append(img)
@@ -183,10 +183,8 @@ class ResourceManager:
         # --------------------------------------------------
         shield_dir = os.path.join(assets_dir, "images", "shield")
         shield_frames = []
-
         for i in range(1, 5):
-            filename = f"shield_0{i}.png"
-            path = os.path.join(shield_dir, filename)
+            path = os.path.join(shield_dir, f"shield_0{i}.png")
             if os.path.exists(path):
                 img = pygame.image.load(path).convert_alpha()
                 shield_frames.append(img)
@@ -199,10 +197,8 @@ class ResourceManager:
         # --------------------------------------------------
         explosion_dir = os.path.join(assets_dir, "images", "explosion")
         explosion_frames = []
-
         for i in range(1, 5):
-            filename = f"explosion_0{i}.png"
-            path = os.path.join(explosion_dir, filename)
+            path = os.path.join(explosion_dir, f"explosion_0{i}.png")
             if os.path.exists(path):
                 img = pygame.image.load(path).convert_alpha()
                 explosion_frames.append(img)
@@ -225,7 +221,7 @@ class ResourceManager:
         cls._sounds["explosion"] = load_sound("explosion.wav")
         cls._sounds["hit"]       = load_sound("hit.wav")
         cls._sounds["bullet"]    = load_sound("bullet.wav")
-        cls._sounds["pickup"]    = load_sound("pickup.wav")  # เผื่อใช้เก็บไอเท็ม
+        cls._sounds["pickup"]    = load_sound("pickup.wav")
 
     # ------------------------------------------------------
     #  Getter ต่าง ๆ
@@ -257,9 +253,6 @@ class ResourceManager:
 
     @classmethod
     def get_item_frames(cls, item_type):
-        """
-        item_type: "single", "double", "shield", ...
-        """
         return cls._images.get("item_frames", {}).get(item_type, [])
 
     @classmethod
@@ -269,6 +262,11 @@ class ResourceManager:
     @classmethod
     def get_explosion_frames(cls):
         return cls._explosion_frames
+
+    @classmethod
+    def get_boss_bullet_frames(cls):
+        """เฟรมของกระสุน Boss"""
+        return cls._images.get("boss_bullet_frames", [])
 
     @classmethod
     def get_sound(cls, key):
