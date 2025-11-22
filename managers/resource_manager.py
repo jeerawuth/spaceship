@@ -16,6 +16,8 @@ EXPLOSION_SCALE = 0.20
 DRONE_SCALE     = 0.10
 SHIELD_SCALE    = 0.4
 
+BOSS_SCALE      = 0.35
+
 
 def scale_image(image: pygame.Surface, scale_factor: float) -> pygame.Surface:
     """Scale ภาพ 1 รูปตาม scale_factor"""
@@ -90,6 +92,23 @@ class ResourceManager:
         cls._images["enemy"] = enemy_frames[0] if enemy_frames else None
 
         # --------------------------------------------------
+        # BOSS: boss_01.png - boss_04.png
+        # --------------------------------------------------
+        boss_dir = os.path.join(assets_dir, "images", "boss")
+        boss_frames = []
+
+        for i in range(1, 5):
+            filename = f"boss_0{i}.png"
+            path = os.path.join(boss_dir, filename)
+            if os.path.exists(path):
+                img = pygame.image.load(path).convert_alpha()
+                boss_frames.append(img)
+
+        boss_frames = scale_frames(boss_frames, BOSS_SCALE)
+        cls._images["boss_frames"] = boss_frames
+        cls._images["boss"] = boss_frames[0] if boss_frames else None
+
+        # --------------------------------------------------
         # METEOR: meteor_01.png - meteor_04.png
         # --------------------------------------------------
         meteor_dir = os.path.join(assets_dir, "images", "meteor")
@@ -160,7 +179,7 @@ class ResourceManager:
             cls._images["item_frames"][item_type] = frames
 
         # --------------------------------------------------
-        # SHIELD: shield_01.png - shield_04.png (เกราะรอบ Hero)
+        # SHIELD: shield_01.png - shield_04.png
         # --------------------------------------------------
         shield_dir = os.path.join(assets_dir, "images", "shield")
         shield_frames = []
@@ -193,7 +212,7 @@ class ResourceManager:
         cls._images["explosion_frames"] = explosion_frames
 
         # --------------------------------------------------
-        # โหลดเสียงต่าง ๆ
+        # SOUNDS
         # --------------------------------------------------
         sounds_dir = os.path.join(assets_dir, "sounds")
 
@@ -223,6 +242,10 @@ class ResourceManager:
     @classmethod
     def get_enemy_frames(cls):
         return cls._images.get("enemy_frames", [])
+
+    @classmethod
+    def get_boss_frames(cls):
+        return cls._images.get("boss_frames", [])
 
     @classmethod
     def get_meteor_frames(cls):

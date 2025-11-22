@@ -2,21 +2,39 @@
 
 import pygame
 
+
 class SoundNode(pygame.sprite.Sprite):
-    def __init__(self, sound, volume=1.0):
+    """
+    เล่นเสียงแบบ Sprite: ทำงานเองแล้ว kill ตัวเองเมื่อเสียงจบ
+    ปลอดภัยแม้ sound.play() จะคืนค่า None
+    """
+
+    def __init__(self, sound: pygame.mixer.Sound):
         super().__init__()
 
-        if isinstance(sound, str):
-            self.sound = pygame.mixer.Sound(sound)
-        else:
-            self.sound = sound
+        self.sound = sound
+        self.channel = None
 
-        self.sound.set_volume(volume)
-        self.channel = self.sound.play()
-
-        self.image = pygame.Surface((0, 0), pygame.SRCALPHA)
-        self.rect = self.image.get_rect()
+        # พยายามเล่นเสียง แต่ถ้าไม่สำเร็จ channel จะเป็น None
+        try:
+            self.channel = self.sound.play()
+        except:
+            self.channel = None
 
     def update(self, dt):
-        if not self.channel.get_busy():
+        """
+        ถ้า channel ไม่มี หรือเล่นจบแล้ว ให้ kill ตัวเอง
+        """
+
+        # ป้องกัน error: channel ไม่มี
+        if self.channel is None:
+            self.kill()
+            return
+
+        # ถ้า channel ไม่มีเสียงแล้ว → kill ตัวเอง
+        try:
+            if not self.channel.get_busy():
+                self.kill()
+        except:
+            # ถ้า channel เสียหรือใช้งานไม่ได้ → ลบตัวเองทันที
             self.kill()
