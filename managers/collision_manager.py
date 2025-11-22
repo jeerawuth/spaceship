@@ -2,9 +2,9 @@
 
 import pygame
 from nodes.explosion_node import ExplosionNode
-from nodes.sound_node import SoundNode
 from nodes.drone_node import DroneNode
 from nodes.shield_node import ShieldNode
+from managers.sound_manager import SoundManager
 
 
 class CollisionManager:
@@ -15,17 +15,10 @@ class CollisionManager:
     @staticmethod
     def handle_bullet_enemy_collisions(
         bullets, enemies,
-        explosions, sound_effects,
+        explosions,
         explosion_frames, explosion_sound,
         score
     ):
-        """
-        กระสุนชนศัตรู:
-        - ลบ bullet และ enemy ที่ชนกัน
-        - สร้าง ExplosionNode
-        - เล่นเสียงระเบิด
-        - เพิ่ม score
-        """
         hits = pygame.sprite.groupcollide(
             bullets, enemies,
             True, True,
@@ -40,9 +33,13 @@ class CollisionManager:
                     expl = ExplosionNode(enemy.rect.center, explosion_frames)
                     explosions.add(expl)
 
-                if explosion_sound is not None:
-                    snd = SoundNode(explosion_sound)
-                    sound_effects.add(snd)
+                # เสียงระเบิดศัตรูทั่วไป
+                SoundManager.play(
+                    explosion_sound,
+                    volume=0.9,
+                    max_simultaneous=8,
+                    priority=5,
+                )
 
         return score
 
@@ -52,14 +49,9 @@ class CollisionManager:
     @staticmethod
     def handle_hero_enemy_collisions(
         heros, enemies,
-        explosions, sound_effects,
+        explosions,
         explosion_frames, explosion_sound
     ):
-        """
-        ฮีโร่ชนศัตรูปกติ:
-        - ลบ Hero และ Enemy ที่ชนกัน
-        - สร้างระเบิดกลางระหว่างสองตัว
-        """
         hits = pygame.sprite.groupcollide(
             heros, enemies,
             True, True,
@@ -75,9 +67,12 @@ class CollisionManager:
                     expl = ExplosionNode((cx, cy), explosion_frames)
                     explosions.add(expl)
 
-                if explosion_sound is not None:
-                    snd = SoundNode(explosion_sound)
-                    sound_effects.add(snd)
+                SoundManager.play(
+                    explosion_sound,
+                    volume=1.0,
+                    max_simultaneous=8,
+                    priority=10,   # ชนตัวเอง → ให้สำคัญหน่อย
+                )
 
     # -------------------------------------------------
     # 3) Hero vs Meteor
@@ -85,13 +80,9 @@ class CollisionManager:
     @staticmethod
     def handle_hero_meteor_collisions(
         heros, meteors,
-        explosions, sound_effects,
+        explosions,
         explosion_frames, explosion_sound
     ):
-        """
-        ฮีโร่ชนอุกกาบาต:
-        - ลบ Hero และ Meteor
-        """
         hits = pygame.sprite.groupcollide(
             heros, meteors,
             True, True,
@@ -107,9 +98,12 @@ class CollisionManager:
                     expl = ExplosionNode((cx, cy), explosion_frames)
                     explosions.add(expl)
 
-                if explosion_sound is not None:
-                    snd = SoundNode(explosion_sound)
-                    sound_effects.add(snd)
+                SoundManager.play(
+                    explosion_sound,
+                    volume=1.0,
+                    max_simultaneous=8,
+                    priority=10,
+                )
 
     # -------------------------------------------------
     # 4) Bullet vs Meteor
@@ -117,15 +111,10 @@ class CollisionManager:
     @staticmethod
     def handle_bullet_meteor_collisions(
         bullets, meteors,
-        explosions, sound_effects,
+        explosions,
         explosion_frames, explosion_sound,
         score
     ):
-        """
-        กระสุนชนอุกกาบาต:
-        - ลบ bullet และ meteor
-        - เพิ่มคะแนน
-        """
         hits = pygame.sprite.groupcollide(
             bullets, meteors,
             True, True,
@@ -140,9 +129,12 @@ class CollisionManager:
                     expl = ExplosionNode(meteor.rect.center, explosion_frames)
                     explosions.add(expl)
 
-                if explosion_sound is not None:
-                    snd = SoundNode(explosion_sound)
-                    sound_effects.add(snd)
+                SoundManager.play(
+                    explosion_sound,
+                    volume=0.8,
+                    max_simultaneous=8,
+                    priority=4,
+                )
 
         return score
 
@@ -153,16 +145,8 @@ class CollisionManager:
     def handle_hero_item_collisions(
         heros, items,
         drones, shields,
-        sound_effects,
         pickup_sound
     ):
-        """
-        ฮีโร่เก็บไอเท็ม:
-        - Hero ไม่หาย, Item หาย
-        - item.type == "single" → Drone ขวา weapon_type="single"
-        - item.type == "double" → Drone ซ้าย+ขวา weapon_type="double"
-        - item.type == "shield" → ShieldNode รอบ Hero
-        """
         hits = pygame.sprite.groupcollide(
             heros, items,
             False, True,
@@ -175,9 +159,13 @@ class CollisionManager:
                 if item_type is None:
                     continue
 
-                if pickup_sound is not None:
-                    snd = SoundNode(pickup_sound)
-                    sound_effects.add(snd)
+                # เสียงเก็บไอเท็ม
+                SoundManager.play(
+                    pickup_sound,
+                    volume=0.7,
+                    max_simultaneous=4,
+                    priority=6,
+                )
 
                 if item_type == "single":
                     drone_right = DroneNode(hero, side="right", weapon_type="single")
@@ -197,14 +185,10 @@ class CollisionManager:
     # -------------------------------------------------
     @staticmethod
     def handle_shield_meteor_collisions(
-        shields, meteors, explosions, sound_effects,
+        shields, meteors,
+        explosions,
         explosion_frames, explosion_sound
     ):
-        """
-        Meteor ชน Shield:
-        - ลบ Meteor
-        - Shield เสีย HP
-        """
         hits = pygame.sprite.groupcollide(
             shields, meteors,
             False, True,
@@ -219,23 +203,22 @@ class CollisionManager:
                     expl = ExplosionNode(meteor.rect.center, explosion_frames)
                     explosions.add(expl)
 
-                if explosion_sound is not None:
-                    snd = SoundNode(explosion_sound)
-                    sound_effects.add(snd)
+                SoundManager.play(
+                    explosion_sound,
+                    volume=0.7,
+                    max_simultaneous=6,
+                    priority=3,
+                )
 
     # -------------------------------------------------
     # 7) Shield vs Enemy
     # -------------------------------------------------
     @staticmethod
     def handle_shield_enemy_collisions(
-        shields, enemies, explosions, sound_effects,
+        shields, enemies,
+        explosions,
         explosion_frames, explosion_sound
     ):
-        """
-        Enemy ชน Shield:
-        - ลบ Enemy
-        - Shield เสีย HP
-        """
         hits = pygame.sprite.groupcollide(
             shields, enemies,
             False, True,
@@ -250,29 +233,26 @@ class CollisionManager:
                     expl = ExplosionNode(enemy.rect.center, explosion_frames)
                     explosions.add(expl)
 
-                if explosion_sound is not None:
-                    snd = SoundNode(explosion_sound)
-                    sound_effects.add(snd)
+                SoundManager.play(
+                    explosion_sound,
+                    volume=0.7,
+                    max_simultaneous=6,
+                    priority=3,
+                )
 
     # -------------------------------------------------
-    # 8) Bullet vs Boss
+    # 8) Bullet vs Boss  (ลดจำนวนเสียง Boss Explosion ลง)
     # -------------------------------------------------
     @staticmethod
     def handle_bullet_boss_collisions(
         bullets, bosses,
-        explosions, sound_effects,
+        explosions,
         explosion_frames, explosion_sound,
         score
     ):
-        """
-        กระสุนชน Boss:
-        - ลบ bullet
-        - Boss โดนดาเมจ (ใช้ boss.take_damage())
-        - ถ้า Boss ตายให้เพิ่มคะแนนพิเศษ
-        """
         hits = pygame.sprite.groupcollide(
             bullets, bosses,
-            True, False,                  # bullet หาย, boss ยังอยู่
+            True, False,
             pygame.sprite.collide_mask
         )
 
@@ -286,12 +266,16 @@ class CollisionManager:
                     expl = ExplosionNode(boss.rect.center, explosion_frames)
                     explosions.add(expl)
 
-                if explosion_sound is not None:
-                    snd = SoundNode(explosion_sound)
-                    sound_effects.add(snd)
+                # 🔇 ลดจำนวนเสียงระเบิด Boss: จำกัดแค่ 3 instance พร้อมกัน และเบาลง
+                SoundManager.play(
+                    explosion_sound,
+                    volume=0.6,
+                    max_simultaneous=3,
+                    priority=2,
+                )
 
                 if died:
-                    score += 50  # โบนัสตอนล้ม Boss
+                    score += 50
 
         return score
 
@@ -301,14 +285,9 @@ class CollisionManager:
     @staticmethod
     def handle_hero_boss_collisions(
         heros, bosses,
-        explosions, sound_effects,
+        explosions,
         explosion_frames, explosion_sound
     ):
-        """
-        ฮีโร่ชน Boss:
-        - Hero ตายทันที
-        - Boss ไม่ตาย (ตามปกติ Boss ไม่ควรหายด้วยการชน)
-        """
         hits = pygame.sprite.groupcollide(
             heros, bosses,
             True, False,
@@ -324,25 +303,23 @@ class CollisionManager:
                     expl = ExplosionNode((cx, cy), explosion_frames)
                     explosions.add(expl)
 
-                if explosion_sound is not None:
-                    snd = SoundNode(explosion_sound)
-                    sound_effects.add(snd)
+                SoundManager.play(
+                    explosion_sound,
+                    volume=1.0,
+                    max_simultaneous=5,
+                    priority=10,
+                )
 
     # -------------------------------------------------
-    # 10) Shield vs Boss
+    # 10) Shield vs Boss  (ลดเสียง Boss Explosion เช่นกัน)
     # -------------------------------------------------
     @staticmethod
     def handle_shield_boss_collisions(
         shields, bosses,
-        explosions, sound_effects,
+        explosions,
         explosion_frames, explosion_sound,
         score
     ):
-        """
-        Shield ชน Boss:
-        - Boss โดนดาเมจ (เหมือนโดนกระสุน)
-        - Shield เสีย HP
-        """
         hits = pygame.sprite.groupcollide(
             shields, bosses,
             False, False,
@@ -361,9 +338,13 @@ class CollisionManager:
                     expl = ExplosionNode(boss.rect.center, explosion_frames)
                     explosions.add(expl)
 
-                if explosion_sound is not None:
-                    snd = SoundNode(explosion_sound)
-                    sound_effects.add(snd)
+                # 🔇 Boss Explosion จาก Shield: จำกัดให้เล่นซ้อนกันได้น้อย
+                SoundManager.play(
+                    explosion_sound,
+                    volume=0.6,
+                    max_simultaneous=3,
+                    priority=2,
+                )
 
                 if died:
                     score += 50

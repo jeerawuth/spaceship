@@ -7,6 +7,7 @@ from settings.game_constants import BULLET_COOLDOWN
 from managers.resource_manager import ResourceManager
 from managers.input_manager import InputManager
 from managers.collision_manager import CollisionManager
+from managers.sound_manager import SoundManager
 from settings.spawn_config import STAGE_SPAWN_CONFIGS
 from managers.spawn_manager import SpawnManager
 
@@ -21,6 +22,9 @@ from nodes.boss_node import BossNode
 def main():
     pygame.init()
     pygame.mixer.init()
+
+    # 🔊 ตั้งค่า SoundPool
+    SoundManager.init(num_channels=32)
 
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Spaceship (State-based Animation)")
@@ -52,7 +56,6 @@ def main():
     drones = pygame.sprite.Group()
     shields = pygame.sprite.Group()
     explosions = pygame.sprite.Group()
-    sound_effects = pygame.sprite.Group()
 
     # --------------------------------------------------
     # สร้าง Hero / Enemy เริ่มต้น
@@ -71,13 +74,11 @@ def main():
 
     # ด่านและเวลา
     current_stage = 1
-    STAGE_DURATION = 30.0  # วินาทีต่อ 1 ด่าน
+    STAGE_DURATION = 30.0  # วินาทีต่อด่าน
     stage_timer = 0.0
     total_time = 0.0
+    max_stage = len(STAGE_SPAWN_CONFIGS)  # ด่านสุดท้าย = Boss stage
 
-    max_stage = len(STAGE_SPAWN_CONFIGS)
-
-    # สถานะเกม
     GAME_STATE_PLAYING = "PLAYING"
     GAME_STATE_GAME_OVER = "GAME_OVER"
     game_state = GAME_STATE_PLAYING
@@ -87,7 +88,7 @@ def main():
     # --------------------------------------------------
     spawn_manager = SpawnManager(STAGE_SPAWN_CONFIGS, initial_stage=current_stage)
 
-    # ถ้าด่านแรกคือด่านสุดท้ายด้วย → spawn Boss ทันที
+    # ถ้าด่านแรกเป็นด่านสุดท้ายด้วย → spawn Boss ทันที
     if current_stage == max_stage:
         bosses.add(BossNode(max_hp=50))
 
@@ -114,7 +115,7 @@ def main():
                 running = False
 
         # --------------------------------------------------
-        # อัปเดตเวลา และเปลี่ยนด่านตามเวลา
+        # อัปเดตเวลา + เปลี่ยนด่าน
         # --------------------------------------------------
         if game_state == GAME_STATE_PLAYING:
             stage_timer += dt
@@ -126,12 +127,12 @@ def main():
                 current_stage += 1
                 spawn_manager.set_stage(current_stage)
 
-                # ถ้าด่านใหม่คือด่านสุดท้าย → spawn Boss
+                # ถ้าเข้าด่านสุดท้าย → spawn Boss
                 if current_stage == max_stage and len(bosses) == 0:
                     bosses.add(BossNode(max_hp=50))
 
         # --------------------------------------------------
-        # Input: ทิศทางการเคลื่อนที่ + ยิงกระสุน
+        # Input: การเคลื่อนที่ + ยิงกระสุน
         # --------------------------------------------------
         if game_state == GAME_STATE_PLAYING:
             move_dir = InputManager.get_move_direction()
@@ -145,26 +146,30 @@ def main():
 
                     bullet_cooldown = BULLET_COOLDOWN
 
-                    snd = ResourceManager.get_sound("bullet")
-                    if snd:
-                        snd.play()
+                    bullet_sound = ResourceManager.get_sound("bullet")
+                    SoundManager.play(
+                        bullet_sound,
+                        volume=0.8,
+                        max_simultaneous=8,
+                        priority=7,
+                    )
         else:
             move_dir = pygame.math.Vector2(0, 0)
 
         # --------------------------------------------------
-        # Spawn Meteor / Item (เฉพาะตอนกำลังเล่น)
+        # Spawn Meteor / Item
         # --------------------------------------------------
         if game_state == GAME_STATE_PLAYING:
             spawn_manager.update(dt, meteors, items)
 
         # --------------------------------------------------
-        # ตรวจสอบการชนต่าง ๆ (เฉพาะตอนกำลังเล่น)
+        # Collision ต่าง ๆ
         # --------------------------------------------------
         if game_state == GAME_STATE_PLAYING:
             # Bullet vs Enemy
             score = CollisionManager.handle_bullet_enemy_collisions(
                 bullets, enemies,
-                explosions, sound_effects,
+                explosions,
                 explosion_frames, explosion_sound,
                 score
             )
@@ -172,74 +177,69 @@ def main():
             # Hero vs Enemy
             CollisionManager.handle_hero_enemy_collisions(
                 heros, enemies,
-                explosions, sound_effects,
+                explosions,
                 explosion_frames, explosion_sound
             )
 
             # Hero vs Meteor
             CollisionManager.handle_hero_meteor_collisions(
                 heros, meteors,
-                explosions, sound_effects,
+                explosions,
                 explosion_frames, explosion_sound
             )
 
             # Bullet vs Meteor
             score = CollisionManager.handle_bullet_meteor_collisions(
                 bullets, meteors,
-                explosions, sound_effects,
+                explosions,
                 explosion_frames, explosion_sound,
                 score
             )
 
-            # Hero เก็บ Item → Drone / Shield
+            # Hero เก็บ Item
             CollisionManager.handle_hero_item_collisions(
                 heros, items,
                 drones, shields,
-                sound_effects,
                 pickup_sound
             )
 
             # Shield vs Meteor
             CollisionManager.handle_shield_meteor_collisions(
                 shields, meteors,
-                explosions, sound_effects,
+                explosions,
                 explosion_frames, explosion_sound
             )
 
             # Shield vs Enemy
             CollisionManager.handle_shield_enemy_collisions(
                 shields, enemies,
-                explosions, sound_effects,
+                explosions,
                 explosion_frames, explosion_sound
             )
 
-            # --------- Collision ที่เกี่ยวกับ Boss ---------
-
-            # Bullet vs Boss
+            # -------- Collision ที่เกี่ยวกับ Boss --------
             score = CollisionManager.handle_bullet_boss_collisions(
                 bullets, bosses,
-                explosions, sound_effects,
+                explosions,
                 explosion_frames, explosion_sound,
                 score
             )
 
-            # Hero vs Boss
             CollisionManager.handle_hero_boss_collisions(
                 heros, bosses,
-                explosions, sound_effects,
+                explosions,
                 explosion_frames, explosion_sound
             )
 
-            # Shield vs Boss
             score = CollisionManager.handle_shield_boss_collisions(
                 shields, bosses,
-                explosions, sound_effects,
+                explosions,
                 explosion_frames, explosion_sound,
                 score
             )
 
         # --------------------------------------------------
-        # อัปเดตทุกกลุ่ม Sprite
+        # Update sprites
         # --------------------------------------------------
         if game_state == GAME_STATE_PLAYING:
             heros.update(dt, move_dir)
@@ -251,12 +251,11 @@ def main():
             items.update(dt)
             shields.update(dt)
 
-            # Hero ตายเมื่อไหร่ → Game Over
+            # ถ้า Hero ตาย → Game Over
             if not hero.alive():
                 game_state = GAME_STATE_GAME_OVER
 
         explosions.update(dt)
-        sound_effects.update(dt)
 
         # --------------------------------------------------
         # วาดทุกอย่าง
@@ -295,6 +294,57 @@ def main():
             True, (255, 255, 255)
         )
         screen.blit(text_weapons, (10, hud_y))
+
+        # ---------------- Boss HP Bar (เฉพาะด่าน Boss) ----------------
+        if current_stage == max_stage and len(bosses) > 0:
+            boss = next(iter(bosses))  # ดึง Boss ตัวแรกจาก group
+
+            if hasattr(boss, "hp") and hasattr(boss, "max_hp") and boss.max_hp > 0:
+                ratio = max(boss.hp, 0) / boss.max_hp  # 0.0 - 1.0
+
+                # เลือกสีตามเปอร์เซ็นต์ HP
+                if ratio > 0.6:
+                    bar_color = (0, 200, 0)       # เขียว
+                elif ratio > 0.3:
+                    bar_color = (230, 200, 0)     # เหลือง
+                else:
+                    bar_color = (200, 0, 0)       # แดง
+
+                bar_width = 300
+                bar_height = 22
+                bar_x = (SCREEN_WIDTH - bar_width) // 2
+                bar_y = 10  # ให้อยู่ด้านบนสุด เหนือ HUD เล็กน้อย
+
+                # พื้นหลัง (เทาเข้ม)
+                pygame.draw.rect(
+                    screen,
+                    (40, 40, 40),
+                    (bar_x, bar_y, bar_width, bar_height)
+                )
+
+                # แถบพลังจริง
+                pygame.draw.rect(
+                    screen,
+                    bar_color,
+                    (bar_x, bar_y, int(bar_width * ratio), bar_height)
+                )
+
+                # กรอบเส้นขาว
+                pygame.draw.rect(
+                    screen,
+                    (255, 255, 255),
+                    (bar_x, bar_y, bar_width, bar_height),
+                    2
+                )
+
+                # ข้อความ Boss HP ตรงกลางแถบ
+                hp_text = font_small.render(
+                    f"Boss HP: {boss.hp}/{boss.max_hp}",
+                    True,
+                    (255, 255, 255)
+                )
+                hp_rect = hp_text.get_rect(center=(SCREEN_WIDTH // 2, bar_y + bar_height // 2))
+                screen.blit(hp_text, hp_rect)
 
         # ---------------- Game Over Text ----------------
         if game_state == GAME_STATE_GAME_OVER:
