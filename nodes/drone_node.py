@@ -11,14 +11,17 @@ from managers.resource_manager import ResourceManager
 from nodes.animation_node import AnimationNode
 from nodes.bullet_node import BulletNode  # หรือส่งคลาสจากข้างนอกก็ได้
 
+
 class DroneNode(AnimationNode):
-    def __init__(self, hero, side="right"):
+    def __init__(self, hero, side="right", weapon_type="single"):
         """
-        hero : HeroNode ที่ drone จะติดตาม
-        side : "right" หรือ "left"
+        hero       : HeroNode ที่ drone จะติดตาม
+        side       : "right" หรือ "left"
+        weapon_type: "single" หรือ "double" (ใช้บอก HUD)
         """
         self.hero = hero
         self.side = side
+        self.weapon_type = weapon_type
 
         frames = ResourceManager.get_drone_frames()
         if not frames:
@@ -41,6 +44,10 @@ class DroneNode(AnimationNode):
         self.fire_cooldown = DRONE_FIRE_INTERVAL
         self.lifetime = DRONE_LIFETIME
 
+        # นับจำนวนอาวุธที่ Hero มีอยู่ตอนนี้
+        if hasattr(self.hero, "weapon_counts") and self.weapon_type in self.hero.weapon_counts:
+            self.hero.weapon_counts[self.weapon_type] += 1
+
     def _update_position(self):
         base_x = self.hero.rect.centerx
         base_y = self.hero.rect.centery + DRONE_Y_OFFSET
@@ -62,6 +69,14 @@ class DroneNode(AnimationNode):
             bullet_pos = self.rect.midtop
             bullet = BulletNode(bullet_pos)
             bullet_group.add(bullet)
+
+    def kill(self):
+        """ลบ Drone ออกจากเกม และอัปเดตจำนวนใน Hero"""
+        if hasattr(self.hero, "weapon_counts"):
+            wt = getattr(self, "weapon_type", None)
+            if wt in self.hero.weapon_counts and self.hero.weapon_counts[wt] > 0:
+                self.hero.weapon_counts[wt] -= 1
+        super().kill()
 
     def update(self, dt, bullet_group=None):
         # อายุการทำงานลดลง

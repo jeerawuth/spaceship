@@ -158,6 +158,7 @@ class CollisionManager:
     # -------------------------------------------------
     # 5) Hero vs Item  → ตรวจ item.type แล้วสร้าง Drone / Shield
     # -------------------------------------------------
+    
     @staticmethod
     def handle_hero_item_collisions(
         heros, items,
@@ -188,12 +189,14 @@ class CollisionManager:
 
                 # ตัดสินตามชนิดไอเท็ม
                 if item.type == "single":
-                    drone_right = DroneNode(hero, side="right")
+                    # single → drone ขวา 1 ตัว
+                    drone_right = DroneNode(hero, side="right", weapon_type="single")
                     drones.add(drone_right)
 
                 elif item.type == "double":
-                    drone_left  = DroneNode(hero, side="left")
-                    drone_right = DroneNode(hero, side="right")
+                    # double → drone ซ้าย + ขวา (นับเป็น double ทั้งคู่)
+                    drone_left = DroneNode(hero, side="left", weapon_type="double")
+                    drone_right = DroneNode(hero, side="right", weapon_type="double")
                     drones.add(drone_left, drone_right)
 
                 elif item.type == "shield":
@@ -219,7 +222,7 @@ class CollisionManager:
         """
         hits = pygame.sprite.groupcollide(
             shields, meteors,
-            False, True,                  # Shield ยังอยู่, Meteor หาย
+            False, True,                    # Shield ยังอยู่, Meteor หาย
             pygame.sprite.collide_circle    # ใช้ circle แทน mask
         )
 
@@ -254,7 +257,7 @@ class CollisionManager:
         hits = pygame.sprite.groupcollide(
             shields, enemies,
             False, True,
-            pygame.sprite.collide_circle    # ✅ ใช้ circle แทน mask
+            pygame.sprite.collide_circle    # ใช้ circle แทน mask
         )
 
         for shield, enemy_list in hits.items():
@@ -268,3 +271,5 @@ class CollisionManager:
                 if explosion_sound is not None:
                     snd = SoundNode(explosion_sound)
                     sound_effects.add(snd)
+
+

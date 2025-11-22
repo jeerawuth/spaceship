@@ -1,24 +1,18 @@
 # main.py
 
 import pygame
-import random
 
-from settings.config import SCREEN_WIDTH, SCREEN_HEIGHT, FPS, GREY
+from settings.config import SCREEN_WIDTH, SCREEN_HEIGHT, FPS, BLACK
 from settings.game_constants import BULLET_COOLDOWN
 from managers.resource_manager import ResourceManager
 from managers.input_manager import InputManager
 from managers.collision_manager import CollisionManager
+from settings.spawn_config import STAGE_SPAWN_CONFIGS
+from managers.spawn_manager import SpawnManager
 
 from nodes.hero_node import HeroNode
 from nodes.enemy_node import EnemyNode
-from nodes.meteor_node import MeteorNode
 from nodes.bullet_node import BulletNode
-from nodes.item_node import ItemNode
-
-
-# ถ้ายังไม่มีค่า spawn interval ใน game_constants ให้กำหนดใน main ไปก่อน
-METEOR_SPAWN_INTERVAL = 1.0   # วินาทีต่อ 1 ลูก
-ITEM_SPAWN_INTERVAL   = 5.0   # วินาทีต่อ 1 ไอเท็ม
 
 
 def main():
@@ -35,19 +29,25 @@ def main():
     ResourceManager.init()
     explosion_frames = ResourceManager.get_explosion_frames()
     explosion_sound = ResourceManager.get_sound("explosion")
-    pickup_sound    = ResourceManager.get_sound("pickup")
+    pickup_sound = ResourceManager.get_sound("pickup")
+
+    # --------------------------------------------------
+    # ฟอนต์สำหรับ HUD และ Game Over
+    # --------------------------------------------------
+    font_small = pygame.font.Font(None, 28)
+    font_big = pygame.font.Font(None, 64)
 
     # --------------------------------------------------
     # กลุ่ม Sprite ต่าง ๆ
     # --------------------------------------------------
-    heros         = pygame.sprite.Group()
-    enemies       = pygame.sprite.Group()
-    bullets       = pygame.sprite.Group()
-    meteors       = pygame.sprite.Group()
-    items         = pygame.sprite.Group()
-    drones        = pygame.sprite.Group()
-    shields       = pygame.sprite.Group()
-    explosions    = pygame.sprite.Group()
+    heros = pygame.sprite.Group()
+    enemies = pygame.sprite.Group()
+    bullets = pygame.sprite.Group()
+    meteors = pygame.sprite.Group()
+    items = pygame.sprite.Group()
+    drones = pygame.sprite.Group()
+    shields = pygame.sprite.Group()
+    explosions = pygame.sprite.Group()
     sound_effects = pygame.sprite.Group()
 
     # --------------------------------------------------
@@ -63,10 +63,23 @@ def main():
     # ตัวแปรเกม
     # --------------------------------------------------
     score = 0
-
     bullet_cooldown = 0.0
-    meteor_spawn_timer = METEOR_SPAWN_INTERVAL
-    item_spawn_timer   = ITEM_SPAWN_INTERVAL
+
+    # ด่านและเวลา
+    current_stage = 1
+    STAGE_DURATION = 30.0  # วินาทีต่อ 1 ด่าน
+    stage_timer = 0.0      # เวลาที่ผ่านมาในด่านปัจจุบัน
+    total_time = 0.0       # เวลาเล่นสะสม (เผื่อใช้ภายหลัง)
+
+    # สถานะเกม
+    GAME_STATE_PLAYING = "PLAYING"
+    GAME_STATE_GAME_OVER = "GAME_OVER"
+    game_state = GAME_STATE_PLAYING
+
+    # --------------------------------------------------
+    # สร้าง SpawnManager สำหรับด่าน 1
+    # --------------------------------------------------
+    spawn_manager = SpawnManager(STAGE_SPAWN_CONFIGS, initial_stage=current_stage)
 
     running = True
     while running:
@@ -79,121 +92,142 @@ def main():
         if not running:
             break
 
+        keys = pygame.key.get_pressed()
+
+        # --------------------------------------------------
+        # ปุ่มตอน Game Over: R = restart, Q = quit
+        # --------------------------------------------------
+        if game_state == GAME_STATE_GAME_OVER:
+            if keys[pygame.K_r]:
+                # เริ่มเกมใหม่ (เรียก main() ใหม่)
+                return main()
+            if keys[pygame.K_q]:
+                running = False
+
+        # --------------------------------------------------
+        # อัปเดตเวลา และเปลี่ยนด่านตามเวลา
+        # --------------------------------------------------
+        if game_state == GAME_STATE_PLAYING:
+            stage_timer += dt
+            total_time += dt
+
+            max_stage = len(STAGE_SPAWN_CONFIGS)
+            if stage_timer >= STAGE_DURATION and current_stage < max_stage:
+                stage_timer = 0.0
+                current_stage += 1
+                spawn_manager.set_stage(current_stage)
+
         # --------------------------------------------------
         # Input: ทิศทางการเคลื่อนที่ + ยิงกระสุน
         # --------------------------------------------------
-        move_dir = InputManager.get_move_direction()  # Vector2
+        if game_state == GAME_STATE_PLAYING:
+            move_dir = InputManager.get_move_direction()  # Vector2
 
-        keys = pygame.key.get_pressed()
-        bullet_cooldown -= dt
+            bullet_cooldown -= dt
+            if keys[pygame.K_SPACE] and bullet_cooldown <= 0:
+                # ยิงกระสุนจาก Hero
+                if hero.alive():
+                    bullet_pos = hero.rect.midtop
+                    bullet = BulletNode(bullet_pos)
+                    bullets.add(bullet)
 
-        if keys[pygame.K_SPACE] and bullet_cooldown <= 0:
-            # ยิงกระสุนจาก Hero
-            if hero.alive():
-                bullet_pos = hero.rect.midtop
-                bullet = BulletNode(bullet_pos)
-                bullets.add(bullet)
+                    bullet_cooldown = BULLET_COOLDOWN
 
-                bullet_cooldown = BULLET_COOLDOWN
-
-                snd = ResourceManager.get_sound("bullet")
-                if snd:
-                    snd.play()
-
-        # --------------------------------------------------
-        # สุ่มเกิด Meteor / Item ตามเวลา
-        # --------------------------------------------------
-        meteor_spawn_timer -= dt
-        if meteor_spawn_timer <= 0:
-            meteor_spawn_timer = METEOR_SPAWN_INTERVAL
-            meteors.add(MeteorNode())
-
-        item_spawn_timer -= dt
-        if item_spawn_timer <= 0:
-            item_spawn_timer = ITEM_SPAWN_INTERVAL
-            # สุ่มชนิดไอเท็ม: single / double / shield
-            item_type = random.choice(["single", "double", "shield"])
-            items.add(ItemNode(item_type))
+                    snd = ResourceManager.get_sound("bullet")
+                    if snd:
+                        snd.play()
+        else:
+            # ตอน Game Over ไม่ให้ Hero เคลื่อน
+            move_dir = pygame.math.Vector2(0, 0)
 
         # --------------------------------------------------
-        # ตรวจสอบการชนต่าง ๆ
+        # Spawn Meteor / Item (เฉพาะตอนกำลังเล่น)
         # --------------------------------------------------
-
-        # 1) Bullet vs Enemy
-        score = CollisionManager.handle_bullet_enemy_collisions(
-            bullets, enemies,
-            explosions, sound_effects,
-            explosion_frames, explosion_sound,
-            score
-        )
-
-        # 2) Hero vs Enemy
-        CollisionManager.handle_hero_enemy_collisions(
-            heros, enemies,
-            explosions, sound_effects,
-            explosion_frames, explosion_sound
-        )
-
-        # 3) Hero vs Meteor
-        CollisionManager.handle_hero_meteor_collisions(
-            heros, meteors,
-            explosions, sound_effects,
-            explosion_frames, explosion_sound
-        )
-
-        # 4) Bullet vs Meteor
-        score = CollisionManager.handle_bullet_meteor_collisions(
-            bullets, meteors,
-            explosions, sound_effects,
-            explosion_frames, explosion_sound,
-            score
-        )
-
-        # 5) Hero เก็บ Item → สร้าง Drone / Shield
-        CollisionManager.handle_hero_item_collisions(
-            heros, items,
-            drones, shields,
-            sound_effects,
-            pickup_sound
-        )
-
-        # 6) Shield vs Meteor
-        CollisionManager.handle_shield_meteor_collisions(
-            shields, meteors,
-            explosions, sound_effects,
-            explosion_frames, explosion_sound
-        )
-
-        # 7) Shield vs Enemy
-        CollisionManager.handle_shield_enemy_collisions(
-            shields, enemies,
-            explosions, sound_effects,
-            explosion_frames, explosion_sound
-        )
+        if game_state == GAME_STATE_PLAYING:
+            spawn_manager.update(dt, meteors, items)
 
         # --------------------------------------------------
-        # อัปเดตทุกกลุ่ม
+        # ตรวจสอบการชนต่าง ๆ (เฉพาะตอนกำลังเล่น)
         # --------------------------------------------------
-        # Hero รับ move_dir
-        heros.update(dt, move_dir)
+        if game_state == GAME_STATE_PLAYING:
+            # 1) Bullet vs Enemy
+            score = CollisionManager.handle_bullet_enemy_collisions(
+                bullets, enemies,
+                explosions, sound_effects,
+                explosion_frames, explosion_sound,
+                score
+            )
 
-        # Drone ยิงอัตโนมัติ ต้องส่ง bullet_group ให้ด้วย
-        drones.update(dt, bullets)
+            # 2) Hero vs Enemy
+            CollisionManager.handle_hero_enemy_collisions(
+                heros, enemies,
+                explosions, sound_effects,
+                explosion_frames, explosion_sound
+            )
 
-        bullets.update(dt)
-        enemies.update(dt)
-        meteors.update(dt)
-        items.update(dt)
-        shields.update(dt)
+            # 3) Hero vs Meteor
+            CollisionManager.handle_hero_meteor_collisions(
+                heros, meteors,
+                explosions, sound_effects,
+                explosion_frames, explosion_sound
+            )
+
+            # 4) Bullet vs Meteor
+            score = CollisionManager.handle_bullet_meteor_collisions(
+                bullets, meteors,
+                explosions, sound_effects,
+                explosion_frames, explosion_sound,
+                score
+            )
+
+            # 5) Hero เก็บ Item → Drone / Shield
+            CollisionManager.handle_hero_item_collisions(
+                heros, items,
+                drones, shields,
+                sound_effects,
+                pickup_sound
+            )
+
+            # 6) Shield vs Meteor
+            CollisionManager.handle_shield_meteor_collisions(
+                shields, meteors,
+                explosions, sound_effects,
+                explosion_frames, explosion_sound
+            )
+
+            # 7) Shield vs Enemy
+            CollisionManager.handle_shield_enemy_collisions(
+                shields, enemies,
+                explosions, sound_effects,
+                explosion_frames, explosion_sound
+            )
+
+        # --------------------------------------------------
+        # อัปเดตทุกกลุ่ม Sprite
+        # --------------------------------------------------
+        if game_state == GAME_STATE_PLAYING:
+            heros.update(dt, move_dir)
+            drones.update(dt, bullets)
+            bullets.update(dt)
+            enemies.update(dt)
+            meteors.update(dt)
+            items.update(dt)
+            shields.update(dt)
+
+            # ถ้า Hero ตาย → Game Over
+            if not hero.alive():
+                game_state = GAME_STATE_GAME_OVER
+
+        # เอฟเฟกต์/เสียงอัปเดตเสมอ
         explosions.update(dt)
         sound_effects.update(dt)
 
         # --------------------------------------------------
         # วาดทุกอย่าง
         # --------------------------------------------------
-        screen.fill(GREY)
+        screen.fill(BLACK)
 
-        # ลำดับการวาด (แล้วแต่ดีไซน์)
+        # ลำดับการวาด
         meteors.draw(screen)
         enemies.draw(screen)
         items.draw(screen)
@@ -204,7 +238,49 @@ def main():
         explosions.draw(screen)
         # sound_effects ไม่ต้อง draw (ไม่มีภาพ)
 
-        # TODO: ถ้าต้องการแสดง score ให้เพิ่มส่วนวาดตัวหนังสือที่นี่
+        # ---------------- HUD: Stage, Score, Weapons ----------------
+        hud_y = 10
+        text_stage = font_small.render(f"Stage: {current_stage}", True, (255, 255, 255))
+        screen.blit(text_stage, (10, hud_y))
+
+        hud_y += 25
+        text_score = font_small.render(f"Score: {score}", True, (255, 255, 255))
+        screen.blit(text_score, (10, hud_y))
+
+        # อ่านค่าจำนวนอาวุธปัจจุบันจาก hero.weapon_counts
+        wc = getattr(hero, "weapon_counts", {})
+        current_single = wc.get("single", 0)
+        current_double = wc.get("double", 0)
+        current_shield = wc.get("shield", 0)
+
+        hud_y += 25
+        text_weapons = font_small.render(
+            f"Single: {current_single}  "
+            f"Double: {current_double}  "
+            f"Shield: {current_shield}",
+            True, (255, 255, 255)
+        )
+        screen.blit(text_weapons, (10, hud_y))
+
+        # ---------------- Game Over Text ----------------
+        if game_state == GAME_STATE_GAME_OVER:
+            game_over_text = font_big.render("GAME OVER", True, (255, 50, 50))
+            score_text = font_small.render(f"Final Score: {score}", True, (255, 255, 255))
+            stage_text = font_small.render(f"Reached Stage: {current_stage}", True, (255, 255, 255))
+            hint_text = font_small.render("Press R to Restart  |  Q to Quit", True, (255, 255, 0))
+
+            center_x = SCREEN_WIDTH // 2
+            center_y = SCREEN_HEIGHT // 2
+
+            rect_game_over = game_over_text.get_rect(center=(center_x, center_y - 40))
+            rect_score = score_text.get_rect(center=(center_x, center_y))
+            rect_stage = stage_text.get_rect(center=(center_x, center_y + 30))
+            rect_hint = hint_text.get_rect(center=(center_x, center_y + 70))
+
+            screen.blit(game_over_text, rect_game_over)
+            screen.blit(score_text, rect_score)
+            screen.blit(stage_text, rect_stage)
+            screen.blit(hint_text, rect_hint)
 
         pygame.display.flip()
 

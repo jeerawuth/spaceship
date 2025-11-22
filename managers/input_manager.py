@@ -1,63 +1,47 @@
 # managers/input_manager.py
 
-# import pygame
-
-# class InputManager:
-#     @staticmethod
-#     def handle_quit_events():
-#         """คืนค่า False ถ้าผู้ใช้กดปิดหน้าต่าง"""
-#         for event in pygame.event.get():
-#             if event.type == pygame.QUIT:
-#                 return False
-#         return True
-
-#     @staticmethod
-#     def is_space_pressed():
-#         keys = pygame.key.get_pressed()
-#         return keys[pygame.K_SPACE]
-
-#     @staticmethod
-#     def get_horizontal_axis():
-#         """ใช้สำหรับขยับ hero ซ้ายขวา"""
-#         keys = pygame.key.get_pressed()
-#         axis = 0
-#         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-#             axis -= 1
-#         if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-#             axis += 1
-#         return axis
-
-
-
-# managers/input_manager.py
-
 import pygame
+
 
 class InputManager:
     @staticmethod
     def handle_quit_events():
+        """คืนค่า False ถ้าผู้ใช้กดปิดหน้าต่าง, True ถ้ายังเล่นต่อ"""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
         return True
 
     @staticmethod
-    def get_move_direction():
-        """คืนค่าทิศทางเป็น Vector2 เช่น (-1, 0), (0, 1), (1, -1)"""
+    def get_move_direction() -> pygame.math.Vector2:
+        """
+        อ่านปุ่มลูกศร / WASD แล้วคืนค่า Vector2 ทิศทางการเคลื่อนที่
+        - ปกติใช้กับ Hero: hero.update(dt, move_dir)
+        """
         keys = pygame.key.get_pressed()
-        direction = pygame.Vector2(0, 0)
+        dx = 0
+        dy = 0
 
+        # ซ้าย-ขวา
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-            direction.x -= 1
+            dx -= 1
         if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            direction.x += 1
+            dx += 1
+
+        # ขึ้น-ลง
         if keys[pygame.K_UP] or keys[pygame.K_w]:
-            direction.y -= 1
+            dy -= 1
         if keys[pygame.K_DOWN] or keys[pygame.K_s]:
-            direction.y += 1
+            dy += 1
 
-        # ทำให้การกดทแยงไม่เร็วกว่า 1 ทิศทาง
-        if direction.length_squared() > 0:
-            direction = direction.normalize()
+        vec = pygame.math.Vector2(dx, dy)
+        if vec.length_squared() > 0:
+            vec = vec.normalize()
 
-        return direction
+        return vec
+
+    @staticmethod
+    def is_space_pressed() -> bool:
+        """เช็คว่าปุ่ม Space ถูกกดอยู่หรือไม่"""
+        keys = pygame.key.get_pressed()
+        return keys[pygame.K_SPACE]

@@ -17,6 +17,9 @@ class ShieldNode(pygame.sprite.Sprite):
         self.max_hp = max_hp
         self.hp = max_hp
 
+        # ชนิดอาวุธ (สำหรับ HUD)
+        self.weapon_type = "shield"
+
         # โหลดเฟรมเกราะจาก ResourceManager (shield_01.png - shield_04.png)
         self.frames = ResourceManager.get_shield_frames()
         if not self.frames:
@@ -39,12 +42,23 @@ class ShieldNode(pygame.sprite.Sprite):
         self.lifetime = SHIELD_LIFETIME
         self.radius = max(self.rect.width, self.rect.height) // 2
 
+        # เพิ่มจำนวน shield ใน Hero ตอนสร้าง
+        if hasattr(self.hero, "weapon_counts") and "shield" in self.hero.weapon_counts:
+            self.hero.weapon_counts["shield"] += 1
+
     # ------------------ โดนโจมตีหนึ่งครั้ง ------------------
     def take_hit(self, damage=1):
         self.hp -= damage
         if self.hp <= 0:
             # เกราะแตก หายไปจากเกม
             self.kill()
+
+    def kill(self):
+        """ลบ Shield ออกจากเกม และอัปเดตจำนวนใน Hero"""
+        if hasattr(self.hero, "weapon_counts") and "shield" in self.hero.weapon_counts:
+            if self.hero.weapon_counts["shield"] > 0:
+                self.hero.weapon_counts["shield"] -= 1
+        super().kill()
 
     # ------------------ อัปเดตเกราะทุกเฟรม ------------------
     def update(self, dt):
@@ -53,7 +67,7 @@ class ShieldNode(pygame.sprite.Sprite):
             self.kill()
             return
 
-        # ติดตามตำแหน่ง Hero ตลอดเวลา
+        # เกราะต้องอยู่ที่ตำแหน่งเดียวกับ Hero ตลอด
         self.rect.center = self.hero.rect.center
 
         # อัปเดตแอนิเมชัน

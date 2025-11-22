@@ -5,6 +5,7 @@ from settings.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from managers.resource_manager import ResourceManager
 from nodes.animation_node import AnimationNode
 
+
 class HeroNode(AnimationNode):
     def __init__(self):
         # โหลดเฟรมทั้งหมดของ Hero (อนาคตจะเพิ่ม state ได้)
@@ -29,6 +30,14 @@ class HeroNode(AnimationNode):
         self.acceleration = 1200        # px/s²
         self.drag = 900                 # px/s²
         self.max_speed = 500            # px/s
+
+        # อาวุธ / ไอเท็มที่ Hero มีอยู่ "ในปัจจุบัน"
+        # จะถูกอัปเดตโดย DroneNode / ShieldNode
+        self.weapon_counts = {
+            "single": 0,
+            "double": 0,
+            "shield": 0,
+        }
 
     def apply_drag(self, dt):
         speed = self.velocity.length()
