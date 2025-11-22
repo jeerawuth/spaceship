@@ -7,7 +7,7 @@ from settings.config import SCREEN_WIDTH
 class UIManager:
     """
     จัดการการวาด UI ทั้งหมด:
-    - HUD (Stage, Score, Weapons)
+    - HUD (Stage, Score, Active Item Counts)
     - Boss HP Bar
     - Game Over Screen
     - You Win Screen
@@ -28,11 +28,13 @@ class UIManager:
         max_stage: int,
         bosses: pygame.sprite.Group,
         game_state: str,
+        drones=None,
+        shields=None,
     ):
         """
         ฟังก์ชันหลัก เรียกจาก main เพื่อวาด HUD, Boss HP, GameOver / Win
         """
-        self._draw_hud(screen, hero, score, current_stage)
+        self._draw_hud(screen, hero, score, current_stage, drones, shields)
         self._draw_boss_hp_bar(screen, bosses)
 
         if game_state == "GAME_OVER":
@@ -42,8 +44,16 @@ class UIManager:
 
     # ----------------- Internal helpers -----------------
 
-    def _draw_hud(self, screen, hero, score: int, current_stage: int):
-        """วาด Stage, Score, Weapons ของ Hero"""
+    def _draw_hud(self, screen, hero, score: int, current_stage: int, drones, shields):
+        """
+        วาด Stage, Score, และ 'จำนวนไอเท็มที่กำลังทำงานอยู่ในปัจจุบัน'
+        เช่น จำนวน Drone, จำนวน Shield, Speed / Laser ที่ Active อยู่
+        """
+        if drones is None:
+            drones = []
+        if shields is None:
+            shields = []
+
         hud_y = 10
 
         # Stage
@@ -59,21 +69,61 @@ class UIManager:
         )
         screen.blit(text_score, (10, hud_y))
 
-        # Weapons จาก hero.weapon_counts
-        wc = getattr(hero, "weapon_counts", {})
-        current_single = wc.get("single", 0)
-        current_double = wc.get("double", 0)
-        current_shield = wc.get("shield", 0)
+        # ---------- นับสถานะปัจจุบันของไอเท็ม ----------
+
+        # 1) นับ Drone ที่เป็นของ Hero นี้
+        drone_count = 0
+        for d in drones:
+            owner = getattr(d, "hero", None)
+            if owner is hero and d.alive():
+                drone_count += 1
+
+        # เดโม่ logic:
+        # - single_count = จำนวน Drone ทั้งหมด (ยิงช่วยกี่กระบอก)
+        # - double_count = 1 ถ้ามี Drone >= 2 (ซ้าย+ขวาครบ) ไม่งั้น 0
+        single_count = drone_count
+        double_count = 1 if drone_count >= 2 else 0
+
+        # 2) Shield: จำนวน ShieldNode ที่ล้อม Hero
+        shield_count = 0
+        for s in shields:
+            owner = getattr(s, "hero", None)
+            if owner is hero and s.alive():
+                shield_count += 1
+
+        # 3) Speed: ใช้ speed_boost_time / speed_multiplier
+        speed_boost_time = getattr(hero, "speed_boost_time", 0.0)
+        speed_multiplier = getattr(hero, "speed_multiplier", 1.0)
+        speed_active = (speed_boost_time > 0.0) or (speed_multiplier > 1.0)
+        speed_count = 1 if speed_active else 0
+
+        # 4) Laser: weapon_mode == "laser"
+        weapon_mode = getattr(hero, "weapon_mode", "normal")
+        laser_active = (weapon_mode == "laser")
+        laser_count = 1 if laser_active else 0
+
+        # ---------- วาด HUD แสดงตัวเลข ----------
 
         hud_y += 25
-        text_weapons = self.font_small.render(
-            f"Single: {current_single}  "
-            f"Double: {current_double}  "
-            f"Shield: {current_shield}",
+        # บรรทัดแรก: อาวุธยิง + Shield
+        text_weapons_1 = self.font_small.render(
+            f"Single: {single_count}  "
+            f"Double: {double_count}  "
+            f"Shield: {shield_count}",
             True,
             (255, 255, 255),
         )
-        screen.blit(text_weapons, (10, hud_y))
+        screen.blit(text_weapons_1, (10, hud_y))
+
+        # บรรทัดสอง: Buff / Mode พิเศษ
+        hud_y += 22
+        text_weapons_2 = self.font_small.render(
+            f"Speed: {speed_count}  "
+            f"Laser: {laser_count}",
+            True,
+            (255, 255, 255),
+        )
+        screen.blit(text_weapons_2, (10, hud_y))
 
     def _draw_boss_hp_bar(
         self,

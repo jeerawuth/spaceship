@@ -165,6 +165,8 @@ class ResourceManager:
             "single": "item_single_0{}.png",
             "double": "item_double_0{}.png",
             "shield": "item_shield_0{}.png",
+            "speed":  "item_speed_0{}.png",
+            "laser":  "item_laser_0{}.png",
         }
 
         for item_type, pattern in item_patterns.items():

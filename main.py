@@ -15,10 +15,7 @@ from managers.sound_manager import SoundManager
 from managers.ui_manager import UIManager
 
 from nodes.hero_node import HeroNode
-from nodes.enemy_node import EnemyNode
-from nodes.meteor_node import MeteorNode
 from nodes.bullet_node import BulletNode
-from nodes.item_node import ItemNode
 from nodes.boss_node import BossNode
 
 
@@ -197,11 +194,21 @@ def main():
             bullet_cooldown -= dt
             if keys[pygame.K_SPACE] and bullet_cooldown <= 0:
                 if hero.alive():
-                    bullet_pos = hero.rect.midtop
-                    bullet = BulletNode(bullet_pos)
-                    bullets.add(bullet)
-
                     bullet_cooldown = BULLET_COOLDOWN
+
+                    if hero.weapon_mode == "normal":
+                        # ยิงปกติ 1 นัด
+                        bullet_pos = hero.rect.midtop
+                        bullet = BulletNode(bullet_pos)
+                        bullets.add(bullet)
+
+                    elif hero.weapon_mode == "laser":
+                        # ตัวอย่าง: ยิง 3 นัดตรง ๆ (เหมือนลำแสงกว้างขึ้น)
+                        offsets = [-10, 0, 10]
+                        for off in offsets:
+                            pos = (hero.rect.centerx + off, hero.rect.top)
+                            bullet = BulletNode(pos)
+                            bullets.add(bullet)
 
                     bullet_sound = ResourceManager.get_sound("bullet")
                     SoundManager.play(
@@ -210,6 +217,7 @@ def main():
                         max_simultaneous=8,
                         priority=7,
                     )
+
         else:
             move_dir = pygame.math.Vector2(0, 0)
 
@@ -354,7 +362,11 @@ def main():
             max_stage=max_stage,
             bosses=bosses,
             game_state=game_state,
+            drones=drones,
+            shields=shields,
         )
+
+
 
         pygame.display.flip()
 

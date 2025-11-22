@@ -138,7 +138,7 @@ class CollisionManager:
         return score
 
     # -------------------------------------------------
-    # 5) Hero vs Item → Drone / Shield
+    # 5) Hero vs Item  → ตรวจ item.type แล้วสร้าง Drone / Shield / Buff
     # -------------------------------------------------
     @staticmethod
     def handle_hero_item_collisions(
@@ -146,37 +146,60 @@ class CollisionManager:
         drones, shields,
         pickup_sound
     ):
+        """
+        ฮีโร่เก็บไอเท็ม:
+        - Hero ไม่หาย, Item หาย
+        - item.type == "single" → สร้าง Drone ด้านขวา
+        - item.type == "double" → สร้าง Drone ซ้าย+ขวา
+        - item.type == "shield" → สร้าง ShieldNode รอบ Hero
+        - item.type == "speed"  → เพิ่มความเร็วชั่วคราว
+        - item.type == "laser"  → เปลี่ยนอาวุธเป็นโหมดเลเซอร์ชั่วคราว
+        - นับจำนวนไอเท็มลง hero.weapon_counts
+        """
         hits = pygame.sprite.groupcollide(
             heros, items,
-            False, True,
+            False, True,                 # Hero ไม่หาย, Item หาย
             pygame.sprite.collide_mask
         )
 
         for hero, item_list in hits.items():
             for item in item_list:
                 item_type = getattr(item, "type", None)
-                if item_type is None:
-                    continue
 
-                SoundManager.play(
-                    pickup_sound,
-                    volume=0.7,
-                    max_simultaneous=4,
-                    priority=6,
-                )
+                # -------- เล่นเสียงเก็บไอเท็ม --------
+                if pickup_sound is not None:
+                    try:
+                        pickup_sound.play()
+                    except Exception:
+                        # กันเคส sound แปลก ๆ แล้วพัง
+                        pass
 
+                # -------- อัปเดตตัวนับใน Hero --------
+                if hasattr(hero, "add_item_count") and item_type is not None:
+                    hero.add_item_count(item_type)
+
+                # -------- ทำเอฟเฟกต์ตามชนิดไอเท็ม --------
                 if item_type == "single":
-                    drone_right = DroneNode(hero, side="right", weapon_type="single")
+                    drone_right = DroneNode(hero, side="right")
                     drones.add(drone_right)
 
                 elif item_type == "double":
-                    drone_left = DroneNode(hero, side="left", weapon_type="double")
-                    drone_right = DroneNode(hero, side="right", weapon_type="double")
+                    drone_left  = DroneNode(hero, side="left")
+                    drone_right = DroneNode(hero, side="right")
                     drones.add(drone_left, drone_right)
 
                 elif item_type == "shield":
                     shield = ShieldNode(hero, max_hp=3)
                     shields.add(shield)
+
+                elif item_type == "speed":
+                    if hasattr(hero, "start_speed_boost"):
+                        hero.start_speed_boost(duration=5.0, multiplier=1.5)
+
+                elif item_type == "laser":
+                    if hasattr(hero, "activate_laser"):
+                        hero.activate_laser(duration=5.0)
+
 
     # -------------------------------------------------
     # 6) Shield vs Meteor
