@@ -15,12 +15,8 @@ from managers.sound_manager import SoundManager
 from managers.ui_manager import UIManager
 
 from nodes.hero_node import HeroNode
-from nodes.enemy_node import EnemyNode
-from nodes.meteor_node import MeteorNode
 from nodes.bullet_node import BulletNode
-from nodes.item_node import ItemNode
 from nodes.boss_node import BossNode
-from nodes.boss_bullet_node import BossBulletNode  # เผื่อ BossNode ใช้ภายใน
 from nodes.laser_beam_node import LaserBeamNode
 
 
@@ -89,6 +85,7 @@ def main():
     items = pygame.sprite.Group()
     drones = pygame.sprite.Group()
     shields = pygame.sprite.Group()
+    speeds = pygame.sprite.Group()
     explosions = pygame.sprite.Group()
     laser_beams = pygame.sprite.Group()   # ★ เลเซอร์ Beam
 
@@ -280,7 +277,7 @@ def main():
             # Hero เก็บ Item
             CollisionManager.handle_hero_item_collisions(
                 heros, items,
-                drones, shields,
+                drones, shields, speeds,
                 pickup_sound
             )
 
@@ -368,6 +365,7 @@ def main():
             meteors.update(dt)
             items.update(dt)
             shields.update(dt)
+            speeds.update(dt)
             laser_beams.update(dt)
 
             if not hero.alive():
@@ -385,11 +383,12 @@ def main():
         bosses.draw(screen)
         items.draw(screen)
         heros.draw(screen)
+        speeds.draw(screen)
         shields.draw(screen)
         drones.draw(screen)
         bullets.draw(screen)
         boss_bullets.draw(screen)
-        laser_beams.draw(screen)   # ★ วาดเลเซอร์
+        laser_beams.draw(screen) 
         explosions.draw(screen)
 
         # HUD + Boss HP + Game Over / Win

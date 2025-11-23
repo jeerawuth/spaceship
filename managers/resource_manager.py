@@ -14,7 +14,8 @@ BOSS_BULLET_SCALE = 0.12         # ★ กระสุน Boss
 ITEM_SCALE       = 0.10
 EXPLOSION_SCALE  = 0.20
 DRONE_SCALE      = 0.10
-SHIELD_SCALE     = 0.4
+SHIELD_SCALE     = 0.3
+SPEED_FLAME_SCALE = 0.1
 BOSS_SCALE       = 0.35
 
 
@@ -195,6 +196,20 @@ class ResourceManager:
         cls._images["shield_frames"] = shield_frames
 
         # --------------------------------------------------
+        # SPEED: speed_01.png - speed_04.png
+        # --------------------------------------------------
+        speed_dir = os.path.join(assets_dir, "images", "speed")
+        speed_frames = []
+        for i in range(1, 5):
+            path = os.path.join(speed_dir, f"speed_0{i}.png")
+            if os.path.exists(path):
+                img = pygame.image.load(path).convert_alpha()
+                speed_frames.append(img)
+
+        speed_frames = scale_frames(speed_frames, SPEED_FLAME_SCALE)
+        cls._images["speed_frames"] = speed_frames
+
+        # --------------------------------------------------
         # EXPLOSION: explosion_01.png - explosion_04.png
         # --------------------------------------------------
         explosion_dir = os.path.join(assets_dir, "images", "explosion")
@@ -261,6 +276,10 @@ class ResourceManager:
     @classmethod
     def get_shield_frames(cls):
         return cls._images.get("shield_frames", [])
+    
+    @classmethod
+    def get_speed_frames(cls):
+        return cls._images.get("speed_frames", [])
 
     @classmethod
     def get_explosion_frames(cls):

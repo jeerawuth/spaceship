@@ -18,8 +18,18 @@ BOSS_STAGE_CONFIGS = {
     },
     4: {
         "max_hp": 100,
-        "fire_interval": 2.0,   # ถี่มาก
-        "bullet_pairs": 4,      # ยิงที 8 นัด (ซ้าย+ขวา 4 ชั้น)
+        "fire_interval": 2.0,   
+        "bullet_pairs": 3,      
+    },
+    5: {
+        "max_hp": 200,
+        "fire_interval": 2.0,
+        "bullet_pairs": 3,
+    },
+    6: {
+        "max_hp": 300,
+        "fire_interval": 2.0,   
+        "bullet_pairs": 4,   
     },
 }
 

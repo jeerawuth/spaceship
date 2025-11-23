@@ -4,6 +4,7 @@ import pygame
 from nodes.explosion_node import ExplosionNode
 from nodes.drone_node import DroneNode
 from nodes.shield_node import ShieldNode
+from nodes.speed_flame_node import SpeedFlameNode
 
 
 class CollisionManager:
@@ -126,7 +127,7 @@ class CollisionManager:
     @staticmethod
     def handle_hero_item_collisions(
         heros, items,
-        drones, shields,
+        drones, shields, speeds,
         pickup_sound
     ):
         hits = pygame.sprite.groupcollide(
@@ -164,6 +165,9 @@ class CollisionManager:
                 elif item_type == "speed":
                     if hasattr(hero, "start_speed_boost"):
                         hero.start_speed_boost(duration=5.0, multiplier=1.5)
+                        speed_flame = SpeedFlameNode(hero)
+                        speeds.add(speed_flame)
+
 
                 elif item_type == "laser":
                     if hasattr(hero, "activate_laser"):

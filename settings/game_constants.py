@@ -18,3 +18,5 @@ DRONE_X_OFFSET = 80         # ห่างจาก Hero ตามแกน x
 DRONE_Y_OFFSET = -10        # ขยับขึ้น/ลงจาก Hero ตามแกน y
 
 SHIELD_LIFETIME = 10.0      # อยู่ได้ 10 วินาทีแล้วหายไป
+SPEED_FLAME_LIFETIME = 10.0  # อยู่ได้ 10 วินาทีแล้วหายไป
+
