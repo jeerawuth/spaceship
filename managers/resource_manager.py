@@ -14,7 +14,7 @@ BOSS_BULLET_SCALE = 0.12         # ★ กระสุน Boss
 ITEM_SCALE       = 0.10
 EXPLOSION_SCALE  = 0.20
 DRONE_SCALE      = 0.10
-SHIELD_SCALE     = 0.3
+SHIELD_SCALE     = 0.2
 SPEED_FLAME_SCALE = 0.1
 BOSS_SCALE       = 0.35
 
@@ -223,6 +223,25 @@ class ResourceManager:
         explosion_frames = scale_frames(explosion_frames, EXPLOSION_SCALE)
         cls._explosion_frames = explosion_frames
         cls._images["explosion_frames"] = explosion_frames
+
+        # --------------------------------------------------
+        # BACKGROUND: bg_01.png - bg_06.png
+        # โฟลเดอร์: assets/images/background/bg_01.png, ...
+        # --------------------------------------------------
+        bg_dir = os.path.join(assets_dir, "images", "background")
+
+        for i in range(1, 7):
+            filename = f"bg_0{i}.png"     # bg_01.png ... bg_06.png
+            path = os.path.join(bg_dir, filename)
+            key = f"bg_0{i}"              # ใช้เรียกผ่าน ResourceManager.get_image("bg_01")
+
+            if os.path.exists(path):
+                img = pygame.image.load(path).convert_alpha()
+                # ถ้าอยาก scale ให้เท่าหน้าจอ ก็สามารถไปทำใน BackgroundManager แทนได้
+                cls._images[key] = img
+            else:
+                # ถ้าหาไฟล์ไม่เจอ จะไม่ใส่ภาพจริง แต่ใส่ None ไว้
+                cls._images[key] = None
 
         # --------------------------------------------------
         # SOUNDS

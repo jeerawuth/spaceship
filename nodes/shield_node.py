@@ -35,7 +35,7 @@ class ShieldNode(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
 
         # เวลาเปลี่ยนเฟรมแอนิเมชัน
-        self.frame_duration = 0.04
+        self.frame_duration = 0.08
         self.time_since_last = 0.0
 
         # อายุการทำงาน (วินาที)

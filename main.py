@@ -13,6 +13,7 @@ from managers.collision_manager import CollisionManager
 from managers.spawn_manager import SpawnManager
 from managers.sound_manager import SoundManager
 from managers.ui_manager import UIManager
+from managers.background_manager import BackgroundManager
 
 from nodes.hero_node import HeroNode
 from nodes.bullet_node import BulletNode
@@ -65,6 +66,12 @@ def main():
     explosion_sound = ResourceManager.get_sound("explosion")
     pickup_sound = ResourceManager.get_sound("pickup")
     laser_sound = ResourceManager.get_sound("laser")
+
+    # --------------------------------------------------
+    # สร้าง Background
+    # --------------------------------------------------
+    background = BackgroundManager()
+
 
     # --------------------------------------------------
     # ฟอนต์ + UI Manager
@@ -356,6 +363,7 @@ def main():
         # Update Sprites
         # --------------------------------------------------
         if game_state == GAME_STATE_PLAYING:
+            background.update(dt)
             heros.update(dt, move_dir)
             enemies.update(dt)
             bosses.update(dt)
@@ -377,7 +385,7 @@ def main():
         # วาดทุกอย่าง
         # --------------------------------------------------
         screen.fill(GREY)
-
+        background.draw(screen)
         meteors.draw(screen)
         enemies.draw(screen)
         bosses.draw(screen)
