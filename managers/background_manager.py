@@ -22,7 +22,7 @@ BACKGROUND_LAYERS = [
         "name": "near_stars",
         "image_key": "bg_02",   
         "scale": 0.5,
-        "speed": 14.0,
+        "speed": 10.0,
     },
 ]
 
@@ -108,8 +108,6 @@ class ParallaxSprite(pygame.sprite.Sprite):
         self.speed = random.uniform(min_speed, max_speed)
 
         self.reset(start_random_inside=start_random_inside)
-
-
 
 
     # ------------------------------------------------
@@ -224,7 +222,6 @@ class BackgroundManager:
                     loaded_keys.append(key) 
             
         num_loaded = len(self.planet_base_images)
-        # ลบ Debug Prints ออกเพื่อให้โค้ดดูสะอาดขึ้น
 
         if num_loaded == 0:
             print("WARNING: No planet base images were loaded. Close planets will not appear.")
@@ -262,14 +259,17 @@ class BackgroundManager:
 
     def draw(self, screen: pygame.Surface):
         
-        if self.close_planet is not None:
-            screen.blit(self.close_planet.image, self.close_planet.rect)
-            
+        # 1. วาดชั้นพื้นหลังที่เป็น Tiled Layer (ชั้นไกล) ก่อน
+        #    *** โค้ดที่แก้ไขแล้ว: ย้ายการวาด planet ลงไปด้านล่าง ***
         for cfg in BACKGROUND_LAYERS:
             name = cfg["name"]
             layer = self.layers.get(name)
             if layer is not None:
                 layer.draw(screen)
+        
+        # 2. วาด Parallax Sprite (Planet ใกล้ตา) ทีหลัง
+        if self.close_planet is not None:
+            screen.blit(self.close_planet.image, self.close_planet.rect)
 
 
     # ------------------------------------------------
@@ -285,7 +285,6 @@ class BackgroundManager:
         
         self.close_planet.update(dt)
 
-        # ★★★ แก้ไข: ใช้ SCREEN_HEIGHT แทน self.screen_h ★★★
         if self.close_planet.rect.top > SCREEN_HEIGHT:
             self.close_planet = None 
 
