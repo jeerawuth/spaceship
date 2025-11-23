@@ -16,20 +16,20 @@ BOSS_STAGE_CONFIGS = {
         "fire_interval": 3.0,
         "bullet_pairs": 3,
     },
-    4: {
-        "max_hp": 100,
-        "fire_interval": 2.0,   
-        "bullet_pairs": 3,      
-    },
-    5: {
-        "max_hp": 200,
-        "fire_interval": 2.0,
-        "bullet_pairs": 3,
-    },
-    6: {
-        "max_hp": 300,
-        "fire_interval": 2.0,   
-        "bullet_pairs": 4,   
-    },
+    # 4: {
+    #     "max_hp": 100,
+    #     "fire_interval": 2.0,   
+    #     "bullet_pairs": 3,      
+    # },
+    # 5: {
+    #     "max_hp": 200,
+    #     "fire_interval": 2.0,
+    #     "bullet_pairs": 3,
+    # },
+    # 6: {
+    #     "max_hp": 300,
+    #     "fire_interval": 2.0,   
+    #     "bullet_pairs": 4,   
+    # },
 }
 

@@ -14,57 +14,57 @@ STAGE_SPAWN_CONFIGS = {
         "meteor_interval": 0.7,
         "item_interval":   7.0,
         "item_weights": {
-            "single": 0.4,
-            "double": 0.2,
-            "shield": 0.2,
-            "speed":  0.1,
-            "laser":  0.1,
-        }
-    },
-    3: {  # ด่าน 3 ยากขึ้น: Meteor ถี่ขึ้น ไอเท็มน้อยลง
-        "meteor_interval": 0.6,
-        "item_interval":   6.0,
-        "item_weights": {
-            "single": 0.3,
-            "double": 0.2,
-            "shield": 0.2,
-            "speed":  0.1,
-            "laser":  0.2,
-        }
-    },
-    4: {  # ด่าน 4 ยากขึ้น: Meteor ถี่ขึ้น ไอเท็มน้อยลง
-        "meteor_interval": 0.6,
-        "item_interval":   6.0,
-        "item_weights": {
-            "single": 0.3,
-            "double": 0.3,
-            "shield": 0.2,
-            "speed":  0.1,
-            "laser":  0.1,
-        }
-    },
-    5: {  # ด่าน 3 ยากขึ้น: Meteor ถี่ขึ้น ไอเท็มน้อยลง
-        "meteor_interval": 0.6,
-        "item_interval":   6.0,
-        "item_weights": {
             "single": 0.2,
             "double": 0.2,
-            "shield": 0.3,
-            "speed":  0.1,
-            "laser":  0.2,
-        }
-    },
-    6: {  # ด่าน 3 ยากขึ้น: Meteor ถี่ขึ้น ไอเท็มน้อยลง
-        "meteor_interval": 0.6,
-        "item_interval":   6.0,
-        "item_weights": {
-            "single": 0.3,
-            "double": 0.2,
-            "shield": 0.1,
+            "shield": 0.2,
             "speed":  0.1,
             "laser":  0.3,
         }
-    }
+    },
+    # 3: {  # ด่าน 3 ยากขึ้น: Meteor ถี่ขึ้น ไอเท็มน้อยลง
+    #     "meteor_interval": 0.6,
+    #     "item_interval":   6.0,
+    #     "item_weights": {
+    #         "single": 0.3,
+    #         "double": 0.2,
+    #         "shield": 0.2,
+    #         "speed":  0.1,
+    #         "laser":  0.2,
+    #     }
+    # },
+    # 4: {  # ด่าน 4 ยากขึ้น: Meteor ถี่ขึ้น ไอเท็มน้อยลง
+    #     "meteor_interval": 0.6,
+    #     "item_interval":   6.0,
+    #     "item_weights": {
+    #         "single": 0.3,
+    #         "double": 0.3,
+    #         "shield": 0.2,
+    #         "speed":  0.1,
+    #         "laser":  0.1,
+    #     }
+    # },
+    # 5: {  # ด่าน 3 ยากขึ้น: Meteor ถี่ขึ้น ไอเท็มน้อยลง
+    #     "meteor_interval": 0.6,
+    #     "item_interval":   6.0,
+    #     "item_weights": {
+    #         "single": 0.2,
+    #         "double": 0.2,
+    #         "shield": 0.3,
+    #         "speed":  0.1,
+    #         "laser":  0.2,
+    #     }
+    # },
+    # 6: {  # ด่าน 3 ยากขึ้น: Meteor ถี่ขึ้น ไอเท็มน้อยลง
+    #     "meteor_interval": 0.6,
+    #     "item_interval":   6.0,
+    #     "item_weights": {
+    #         "single": 0.3,
+    #         "double": 0.2,
+    #         "shield": 0.1,
+    #         "speed":  0.1,
+    #         "laser":  0.3,
+    #     }
+    # }
     # เพิ่มด่าน 3, 4, ... ได้ตามใจ
 }
 

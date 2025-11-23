@@ -4,15 +4,21 @@ import pygame
 
 from settings.config import SCREEN_WIDTH, SCREEN_HEIGHT, FPS, GREY
 from settings.game_constants import (
-  BULLET_COOLDOWN,
-  GAME_STATE_PLAYING,
-  GAME_STATE_GAME_OVER,
-  GAME_STATE_WIN,
-  GAME_STATE_PAUSED,
-  GAME_STATE_CONFIRM_QUIT
+    BULLET_COOLDOWN,
+    GAME_STATE_PLAYING,
+    GAME_STATE_GAME_OVER,
+    GAME_STATE_WIN,
+    GAME_STATE_PAUSED,
+    GAME_STATE_CONFIRM_QUIT,
 )
-from settings.spawn_config import STAGE_SPAWN_CONFIGS
-from settings.boss_config import BOSS_STAGE_CONFIGS
+
+# ✅ ใช้ Hybrid Stage Config แทน spawn_config + boss_config แยกกัน
+from settings.stage_config import (
+    STAGE_CONFIGS,
+    has_boss,
+    get_boss_config,
+    MAX_STAGE,
+)
 
 from managers.resource_manager import ResourceManager
 from managers.input_manager import InputManager
@@ -32,12 +38,16 @@ from nodes.laser_beam_node import LaserBeamNode
 BOSS_APPEAR_RATIO = 0.7
 
 
-def create_boss_for_stage(stage: int, hero: HeroNode, boss_bullets: pygame.sprite.Group) -> BossNode:
+def create_boss_for_stage(
+    stage: int,
+    hero: HeroNode,
+    boss_bullets: pygame.sprite.Group,
+) -> BossNode:
     """
-    สร้าง BossNode ตามค่าที่กำหนดไว้ใน BOSS_STAGE_CONFIGS ของด่านนั้น ๆ
+    สร้าง BossNode ตามค่าที่กำหนดไว้ใน STAGE_CONFIGS ของด่านนั้น ๆ
     - ถ้าไม่เจอ config ของด่านนั้น จะใช้ค่า default
     """
-    cfg = BOSS_STAGE_CONFIGS.get(stage, {})
+    cfg = get_boss_config(stage)  # ถ้าไม่มี boss จะได้ {} กลับมา
 
     max_hp = cfg.get("max_hp", 50)
     fire_interval = cfg.get("fire_interval", 5.0)
@@ -79,7 +89,6 @@ def main():
     # --------------------------------------------------
     background = BackgroundManager()
 
-
     # --------------------------------------------------
     # ฟอนต์ + UI Manager
     # --------------------------------------------------
@@ -119,16 +128,19 @@ def main():
     STAGE_DURATION = 30.0       # วินาทีต่อด่าน
     stage_timer = 0.0
     total_time = 0.0
-    max_stage = len(STAGE_SPAWN_CONFIGS)
+    max_stage = MAX_STAGE       # ✅ ใช้ค่าจาก stage_config
     game_state = GAME_STATE_PLAYING
 
     # สำหรับด่านที่มีบอส
     boss_spawned = False
 
     # --------------------------------------------------
-    # SpawnManager สำหรับด่านแรก
+    # SpawnManager สำหรับด่านแรก (ใช้ STAGE_CONFIGS แบบ Hybrid)
     # --------------------------------------------------
-    spawn_manager = SpawnManager(STAGE_SPAWN_CONFIGS, initial_stage=current_stage)
+    spawn_manager = SpawnManager(STAGE_CONFIGS, initial_stage=current_stage)
+
+    # (ถ้าอยาก debug จำนวนด่าน ลองเปิดบรรทัดนี้ชั่วคราวได้)
+    # print("DEBUG :: STAGE_CONFIGS keys =", list(STAGE_CONFIGS.keys()), "MAX_STAGE =", max_stage)
 
     running = True
     while running:
@@ -142,7 +154,7 @@ def main():
             break
 
         keys = pygame.key.get_pressed()
-        
+
         # --------------------------------------------------
         # ปุ่มสำหรับ Pause / Resume / ออกจากเกม
         # --------------------------------------------------
@@ -175,15 +187,6 @@ def main():
                 running = False
 
         # --------------------------------------------------
-        # ปุ่มตอน Game Over / You Win: R = restart, Q = quit
-        # --------------------------------------------------
-        if game_state in (GAME_STATE_GAME_OVER, GAME_STATE_WIN):
-            if keys[pygame.K_r]:
-                return main()
-            if keys[pygame.K_q]:
-                running = False
-
-        # --------------------------------------------------
         # เวลา + เปลี่ยนด่าน (แยกกรณีมีบอส / ไม่มีบอส)
         # --------------------------------------------------
         if game_state == GAME_STATE_PLAYING:
@@ -191,7 +194,7 @@ def main():
             total_time += dt
 
             # ----- กรณีด่านนี้ "มีบอส" -----
-            if current_stage in BOSS_STAGE_CONFIGS:
+            if has_boss(current_stage):
                 # 1) ให้บอสโผล่ช่วงท้ายด่าน (ตาม BOSS_APPEAR_RATIO) ถ้ายังไม่ spawn
                 if (not boss_spawned) and stage_timer >= STAGE_DURATION * BOSS_APPEAR_RATIO:
                     bosses.add(create_boss_for_stage(current_stage, hero, boss_bullets))
@@ -258,7 +261,6 @@ def main():
         # --------------------------------------------------
         # จัดการ LaserBeam ตาม weapon_mode ของ Hero
         # --------------------------------------------------
-        # ใน main loop, ตอนจัดการโหมดเลเซอร์
         if game_state == GAME_STATE_PLAYING and hero.alive():
             if getattr(hero, "weapon_mode", "normal") == "laser":
                 # ถ้ายังไม่มีเลเซอร์ → สร้างขึ้นมา 1 ชิ้น
@@ -287,110 +289,141 @@ def main():
         if game_state == GAME_STATE_PLAYING:
             # Bullet vs Enemy
             score = CollisionManager.handle_bullet_enemy_collisions(
-                bullets, enemies,
+                bullets,
+                enemies,
                 explosions,
-                explosion_frames, explosion_sound,
-                score
+                explosion_frames,
+                explosion_sound,
+                score,
             )
 
             # Hero vs Enemy
             CollisionManager.handle_hero_enemy_collisions(
-                heros, enemies,
+                heros,
+                enemies,
                 explosions,
-                explosion_frames, explosion_sound
+                explosion_frames,
+                explosion_sound,
             )
 
             # Hero vs Meteor
             CollisionManager.handle_hero_meteor_collisions(
-                heros, meteors,
+                heros,
+                meteors,
                 explosions,
-                explosion_frames, explosion_sound
+                explosion_frames,
+                explosion_sound,
             )
 
             # Bullet vs Meteor
             score = CollisionManager.handle_bullet_meteor_collisions(
-                bullets, meteors,
+                bullets,
+                meteors,
                 explosions,
-                explosion_frames, explosion_sound,
-                score
+                explosion_frames,
+                explosion_sound,
+                score,
             )
 
             # Hero เก็บ Item
             CollisionManager.handle_hero_item_collisions(
-                heros, items,
-                drones, shields, speeds,
-                pickup_sound
+                heros,
+                items,
+                drones,
+                shields,
+                speeds,
+                pickup_sound,
             )
 
             # Shield vs Meteor
             CollisionManager.handle_shield_meteor_collisions(
-                shields, meteors,
+                shields,
+                meteors,
                 explosions,
-                explosion_frames, explosion_sound
+                explosion_frames,
+                explosion_sound,
             )
 
             # Shield vs Enemy
             CollisionManager.handle_shield_enemy_collisions(
-                shields, enemies,
+                shields,
+                enemies,
                 explosions,
-                explosion_frames, explosion_sound
+                explosion_frames,
+                explosion_sound,
             )
 
             # -------- Boss (ตัว + กระสุน) --------
             score = CollisionManager.handle_bullet_boss_collisions(
-                bullets, bosses,
+                bullets,
+                bosses,
                 explosions,
-                explosion_frames, explosion_sound,
-                score
+                explosion_frames,
+                explosion_sound,
+                score,
             )
 
             CollisionManager.handle_hero_boss_collisions(
-                heros, bosses,
+                heros,
+                bosses,
                 explosions,
-                explosion_frames, explosion_sound
+                explosion_frames,
+                explosion_sound,
             )
 
             score = CollisionManager.handle_shield_boss_collisions(
-                shields, bosses,
+                shields,
+                bosses,
                 explosions,
-                explosion_frames, explosion_sound,
-                score
+                explosion_frames,
+                explosion_sound,
+                score,
             )
 
             # BossBullet vs Hero
             CollisionManager.handle_hero_bossbullet_collisions(
-                heros, boss_bullets,
+                heros,
+                boss_bullets,
                 explosions,
-                explosion_frames, explosion_sound
+                explosion_frames,
+                explosion_sound,
             )
 
             # BossBullet vs Shield
             CollisionManager.handle_shield_bossbullet_collisions(
-                shields, boss_bullets,
+                shields,
+                boss_bullets,
                 explosions,
-                explosion_frames, explosion_sound
+                explosion_frames,
+                explosion_sound,
             )
 
             # -------- LaserBeam vs Enemy/Meteor/Boss --------
             score = CollisionManager.handle_laser_enemy_collisions(
-                laser_beams, enemies,
+                laser_beams,
+                enemies,
                 explosions,
-                explosion_frames, explosion_sound,
-                score
+                explosion_frames,
+                explosion_sound,
+                score,
             )
 
             score = CollisionManager.handle_laser_meteor_collisions(
-                laser_beams, meteors,
+                laser_beams,
+                meteors,
                 explosions,
-                explosion_frames, explosion_sound,
-                score
+                explosion_frames,
+                explosion_sound,
+                score,
             )
 
             score = CollisionManager.handle_laser_boss_collisions(
-                laser_beams, bosses,
+                laser_beams,
+                bosses,
                 explosions,
-                explosion_frames, explosion_sound,
-                score
+                explosion_frames,
+                explosion_sound,
+                score,
             )
 
         # --------------------------------------------------
@@ -430,7 +463,7 @@ def main():
         drones.draw(screen)
         bullets.draw(screen)
         boss_bullets.draw(screen)
-        laser_beams.draw(screen) 
+        laser_beams.draw(screen)
         explosions.draw(screen)
 
         # HUD + Boss HP + Game Over / Win

@@ -10,22 +10,20 @@ from nodes.laser_item_node import LaserItemNode
 class SpawnManager:
     """
     จัดการการ Spawn ศัตรู/อ็อบเจกต์ต่าง ๆ ตาม config ของแต่ละด่าน
-    คอนฟิกถูกส่งมาจาก settings.spawn_config.STAGE_SPAWN_CONFIGS
-    ตัวอย่างโครงสร้าง config:
 
-    STAGE_SPAWN_CONFIGS = {
-        1: {
-            "meteor_interval": 1.0,
-            "item_interval": 5.0,
-            "item_weights": {
-                "single": 0.6,
-                "double": 0.3,
-                "shield": 0.1,
-            },
-        },
-        2: { ... },
-    }
+    รองรับสองแบบ:
+    - แบบเดิม: stage_configs = STAGE_SPAWN_CONFIGS
+        { stage: { "meteor_interval": ..., "item_interval": ..., "item_weights": {...} } }
+
+    - แบบ Hybrid: stage_configs = STAGE_CONFIGS
+        {
+          stage: {
+            "spawn": { "meteor_interval": ..., "item_interval": ..., "item_weights": {...} },
+            "boss":  {...}  # (ไม่ใช้ใน SpawnManager)
+          }
+        }
     """
+
     def __init__(self, stage_configs: dict, initial_stage: int = 1):
         self.stage_configs = stage_configs
         self.current_stage = None
@@ -40,6 +38,12 @@ class SpawnManager:
         """เปลี่ยนด่าน → โหลด config ใหม่ของด่านนั้น"""
         self.current_stage = stage
         cfg = self.stage_configs.get(stage, {})
+
+        # Hybrid support:
+        # ถ้า cfg ไม่มี key meteor_interval แต่มี key "spawn"
+        # แปลว่าใช้โครงสร้าง STAGE_CONFIGS → ดึง cfg["spawn"] มาใช้แทน
+        if "meteor_interval" not in cfg and "spawn" in cfg:
+            cfg = cfg["spawn"]
 
         self.meteor_interval = cfg.get("meteor_interval", 1.0)
         self.item_interval   = cfg.get("item_interval", 5.0)
