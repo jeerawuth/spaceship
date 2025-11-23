@@ -32,7 +32,7 @@ PLANET_CONFIG = {
     "base_scale": 0.25,          
     "min_speed": 40.0,           
     "max_speed": 60.0,           
-    "scale_range": (0.9, 1.2),   
+    "scale_range": (3.0, 5.0),   
 }
 
 
@@ -109,21 +109,83 @@ class ParallaxSprite(pygame.sprite.Sprite):
 
         self.reset(start_random_inside=start_random_inside)
 
+
+
+
+    # ------------------------------------------------
+    # ให้แสดงที่หน้าจอ 40% ของขนาดปัจจุบันของดวงดาว
+    # ------------------------------------------------
+
     def reset(self, start_random_inside: bool = False):
         """
-        กำหนดตำแหน่งเริ่มต้นใหม่ (เหนือจอ)
+        กำหนดตำแหน่งเริ่มต้นใหม่ (เหนือจอ) โดยบังคับให้อยู่บริเวณขอบซ้ายหรือขอบขวา 
+        และให้เห็นอย่างน้อย 40% ของดวงดาว (สุ่มตั้งแต่ 40% ถึงขอบเขต 25% ของจอ)
         """
-        self.rect.centerx = random.randint(
-            self.rect.width // 2,
-            self.screen_w - self.rect.width // 2
-        )
+        
+        PLANET_WIDTH = self.rect.width
+        HALF_WIDTH = PLANET_WIDTH // 2
+        
+        # 1. กำหนดขอบเขตที่ดาวอนุญาตให้เกิด (25% จากขอบจอ)
+        BOUNDARY_WIDTH = int(self.screen_w * 0.25) 
+        
+        # 2. คำนวณขอบเขตการมองเห็นที่ต้องการ
+        MIN_VISIBLE = PLANET_WIDTH * 0.40  # 40% คือส่วนที่ต้องเห็นอย่างน้อย
+        MAX_HIDDEN = PLANET_WIDTH - MIN_VISIBLE # 60% คือส่วนที่ซ่อนได้มากที่สุด
 
+        # 3. เลือกบริเวณ: 0 = ขอบซ้าย, 1 = ขอบขวา
+        side = random.choice([0, 1])
+
+        if side == 0:
+            # เกิดบริเวณขอบซ้าย (Center X ต้องอยู่ระหว่าง):
+            
+            # A) ตำแหน่งที่เห็นมากที่สุด (ขอบขวาของดาวชนขอบ 25%)
+            # Center X = (ขอบเขต 25%) - HALF_WIDTH
+            LIMIT_A = BOUNDARY_WIDTH - HALF_WIDTH
+            
+            # B) ตำแหน่งที่เห็นน้อยที่สุด (ดาวซ่อนไป 60% เห็น 40% พอดี)
+            # Center X = (ขอบซ้ายของภาพที่ 0 - MAX_HIDDEN) + HALF_WIDTH
+            LIMIT_B = (0 - MAX_HIDDEN) + HALF_WIDTH
+            
+            # เนื่องจาก Limit B (ซ่อนมากสุด) จะมีค่าน้อยกว่า (เป็นลบมากกว่า)
+            MIN_X = int(LIMIT_B)
+            MAX_X = int(LIMIT_A)
+            
+            if MIN_X >= MAX_X:
+                # กรณีภาพใหญ่มาก ให้เกิดที่ตำแหน่งเห็น 40% พอดี
+                self.rect.centerx = MIN_X
+            else:
+                self.rect.centerx = random.randint(MIN_X, MAX_X)
+                 
+        else:
+            # เกิดบริเวณขอบขวา (Center X ต้องอยู่ระหว่าง):
+            
+            # A) ตำแหน่งที่เห็นน้อยที่สุด (ดาวซ่อนไป 60% เห็น 40% พอดี)
+            # Center X = (ขอบขวาของภาพที่ SCREEN_WIDTH + MAX_HIDDEN) - HALF_WIDTH
+            LIMIT_A = (self.screen_w + MAX_HIDDEN) - HALF_WIDTH
+            
+            # B) ตำแหน่งที่เห็นมากที่สุด (ขอบซ้ายของดาวชนขอบ 75%)
+            # ขอบซ้าย 75% = SCREEN_WIDTH - BOUNDARY_WIDTH
+            # Center X = (ขอบซ้าย 75%) + HALF_WIDTH
+            LIMIT_B = (self.screen_w - BOUNDARY_WIDTH) + HALF_WIDTH
+            
+            # เนื่องจาก Limit A (ซ่อนมากสุด) จะมีค่ามากกว่า
+            MIN_X = int(LIMIT_B)
+            MAX_X = int(LIMIT_A)
+            
+            if MIN_X >= MAX_X:
+                # กรณีภาพใหญ่มาก ให้เกิดที่ตำแหน่งเห็น 40% พอดี
+                self.rect.centerx = MIN_X 
+            else:
+                 self.rect.centerx = random.randint(MIN_X, MAX_X)
+        
+        # ----------------------------------------------------
+        
         if start_random_inside:
             self.rect.y = random.randint(-self.screen_h, self.screen_h)
         else:
             # กำหนดตำแหน่งเริ่มต้นเหนือจอ
             y_offset = random.randint(20, 150) 
-            self.rect.bottom = -y_offset 
+            self.rect.bottom = -y_offset
 
     def update(self, dt: float):
         self.rect.y += self.speed * dt
