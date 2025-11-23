@@ -41,6 +41,11 @@ class UIManager:
             self._draw_game_over(screen, score, current_stage)
         elif game_state == "WIN":
             self._draw_game_win(screen, score, current_stage)
+        elif game_state == "PAUSED":
+            self._draw_pause(screen)
+        elif game_state == "CONFIRM_QUIT":
+            self._draw_confirm_quit(screen)
+
 
     # ----------------- Internal helpers -----------------
 
@@ -258,3 +263,52 @@ class UIManager:
         screen.blit(score_text, rect_score)
         screen.blit(stage_text, rect_stage)
         screen.blit(hint_text, rect_hint)
+
+
+    def _draw_pause(self, screen):
+        """วาดหน้าจอ Pause กลางจอ"""
+        pause_text = self.font_big.render(
+            "PAUSED", True, (255, 255, 0)
+        )
+        hint_text1 = self.font_small.render(
+            "Press R to Resume", True, (255, 255, 255)
+        )
+        hint_text2 = self.font_small.render(
+            "Press Q to Quit Game", True, (255, 255, 255)
+        )
+
+        screen_rect = screen.get_rect()
+        center_x = screen_rect.centerx
+        center_y = screen_rect.centery
+
+        rect_pause = pause_text.get_rect(center=(center_x, center_y - 40))
+        rect_hint1 = hint_text1.get_rect(center=(center_x, center_y))
+        rect_hint2 = hint_text2.get_rect(center=(center_x, center_y + 30))
+
+        screen.blit(pause_text, rect_pause)
+        screen.blit(hint_text1, rect_hint1)
+        screen.blit(hint_text2, rect_hint2)
+
+    def _draw_confirm_quit(self, screen):
+        """วาดหน้าจอถามยืนยันออกจากเกม"""
+        confirm_text = self.font_big.render(
+            "QUIT GAME?", True, (255, 80, 80)
+        )
+        hint_text1 = self.font_small.render(
+            "Press Y to Confirm", True, (255, 255, 255)
+        )
+        hint_text2 = self.font_small.render(
+            "Press N to Cancel", True, (255, 255, 255)
+        )
+
+        screen_rect = screen.get_rect()
+        center_x = screen_rect.centerx
+        center_y = screen_rect.centery
+
+        rect_confirm = confirm_text.get_rect(center=(center_x, center_y - 40))
+        rect_hint1 = hint_text1.get_rect(center=(center_x, center_y))
+        rect_hint2 = hint_text2.get_rect(center=(center_x, center_y + 30))
+
+        screen.blit(confirm_text, rect_confirm)
+        screen.blit(hint_text1, rect_hint1)
+        screen.blit(hint_text2, rect_hint2)

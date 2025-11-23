@@ -3,7 +3,14 @@
 import pygame
 
 from settings.config import SCREEN_WIDTH, SCREEN_HEIGHT, FPS, GREY
-from settings.game_constants import BULLET_COOLDOWN
+from settings.game_constants import (
+  BULLET_COOLDOWN,
+  GAME_STATE_PLAYING,
+  GAME_STATE_GAME_OVER,
+  GAME_STATE_WIN,
+  GAME_STATE_PAUSED,
+  GAME_STATE_CONFIRM_QUIT
+)
 from settings.spawn_config import STAGE_SPAWN_CONFIGS
 from settings.boss_config import BOSS_STAGE_CONFIGS
 
@@ -113,10 +120,6 @@ def main():
     stage_timer = 0.0
     total_time = 0.0
     max_stage = len(STAGE_SPAWN_CONFIGS)
-
-    GAME_STATE_PLAYING = "PLAYING"
-    GAME_STATE_GAME_OVER = "GAME_OVER"
-    GAME_STATE_WIN = "WIN"
     game_state = GAME_STATE_PLAYING
 
     # สำหรับด่านที่มีบอส
@@ -139,6 +142,37 @@ def main():
             break
 
         keys = pygame.key.get_pressed()
+        
+        # --------------------------------------------------
+        # ปุ่มสำหรับ Pause / Resume / ออกจากเกม
+        # --------------------------------------------------
+        # ขณะเล่นเกมอยู่ กด P เพื่อพักเกม (PAUSE)
+        if game_state == GAME_STATE_PLAYING:
+            if keys[pygame.K_p]:
+                game_state = GAME_STATE_PAUSED
+
+        # ขณะพักเกมอยู่ กด R เพื่อเล่นต่อ, กด Q เพื่อขอออกเกม (ไปหน้า Confirm)
+        elif game_state == GAME_STATE_PAUSED:
+            if keys[pygame.K_r]:
+                game_state = GAME_STATE_PLAYING
+            elif keys[pygame.K_q]:
+                game_state = GAME_STATE_CONFIRM_QUIT
+
+        # หน้า Confirm Quit กด Y เพื่อออก, กด N เพื่อยกเลิกกลับไป Pause
+        elif game_state == GAME_STATE_CONFIRM_QUIT:
+            if keys[pygame.K_y]:
+                running = False      # ออกจาก while running → pygame.quit()
+            elif keys[pygame.K_n]:
+                game_state = GAME_STATE_PAUSED
+
+        # --------------------------------------------------
+        # ปุ่มตอน Game Over / You Win: R = restart, Q = quit
+        # --------------------------------------------------
+        if game_state in (GAME_STATE_GAME_OVER, GAME_STATE_WIN):
+            if keys[pygame.K_r]:
+                return main()
+            if keys[pygame.K_q]:
+                running = False
 
         # --------------------------------------------------
         # ปุ่มตอน Game Over / You Win: R = restart, Q = quit

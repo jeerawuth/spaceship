@@ -20,3 +20,10 @@ DRONE_Y_OFFSET = -10        # ขยับขึ้น/ลงจาก Hero ต�
 SHIELD_LIFETIME = 10.0      # อยู่ได้ 10 วินาทีแล้วหายไป
 SPEED_FLAME_LIFETIME = 10.0  # อยู่ได้ 10 วินาทีแล้วหายไป
 
+# สถานะเกม
+GAME_STATE_PLAYING = "PLAYING"
+GAME_STATE_GAME_OVER = "GAME_OVER"
+GAME_STATE_WIN = "WIN"
+GAME_STATE_PAUSED = "PAUSED"            
+GAME_STATE_CONFIRM_QUIT = "CONFIRM_QUIT" 
+
