@@ -14,13 +14,13 @@ from managers.resource_manager import ResourceManager
 BACKGROUND_LAYERS = [
     {
         "name": "far_stars",
-        "image_key": "bg_01",   # ดาวเล็ก ไกลสุด
+        "image_key": "bg_01",   
         "scale": 0.05,          
         "speed": 8.0,           
     },
     {
         "name": "near_stars",
-        "image_key": "bg_02",   # ดาวชัดขึ้น ใกล้กว่า
+        "image_key": "bg_02",   
         "scale": 0.5,
         "speed": 14.0,
     },
@@ -29,9 +29,9 @@ BACKGROUND_LAYERS = [
 # ดาว / ดาวเคราะห์ใกล้สายตา
 PLANET_CONFIG = {
     "image_keys": ["bg_03", "bg_04", "bg_05", "bg_06"],
-    "base_scale": 0.25,          # ปรับลดขนาดลงเพื่อให้ปรากฏเร็วขึ้น
-    "min_speed": 40.0,           # ปรับเพิ่มความเร็วให้เลื่อนเข้าจอไวขึ้น
-    "max_speed": 60.0,           # ปรับเพิ่มความเร็วให้เลื่อนเข้าจอไวขึ้น
+    "base_scale": 0.25,          
+    "min_speed": 40.0,           
+    "max_speed": 60.0,           
     "scale_range": (0.9, 1.2),   
 }
 
@@ -82,7 +82,6 @@ class ParallaxSprite(pygame.sprite.Sprite):
     """
     สำหรับวัตถุที่ลอยลง (ดาว / ดาวเคราะห์ ใกล้สายตา)
     - มีความเร็วของตัวเอง
-    - หลุดล่างจอแล้วสุ่มเกิดใหม่ด้านบน
     """
 
     def __init__(
@@ -114,7 +113,6 @@ class ParallaxSprite(pygame.sprite.Sprite):
         """
         กำหนดตำแหน่งเริ่มต้นใหม่ (เหนือจอ)
         """
-        # การคำนวณตำแหน่ง X: ให้กึ่งกลางของดาวอยู่ในช่วง 0 ถึง SCREEN_WIDTH
         self.rect.centerx = random.randint(
             self.rect.width // 2,
             self.screen_w - self.rect.width // 2
@@ -129,9 +127,7 @@ class ParallaxSprite(pygame.sprite.Sprite):
 
     def update(self, dt: float):
         self.rect.y += self.speed * dt
-        if self.rect.top > self.screen_h:
-            # หลุดจอ → ไปเริ่มด้านบนใหม่
-            self.reset(start_random_inside=False)
+        # ลบ self.reset() ออก (โค้ดถูกต้องแล้ว)
 
 
 # ============================================================
@@ -139,11 +135,6 @@ class ParallaxSprite(pygame.sprite.Sprite):
 # ============================================================
 
 class BackgroundManager:
-    """
-    จัดการ background ทั้งหมด:
-    - ชั้น starfield ไกล / ใกล้ (bg_01, bg_02)
-    - ดาว/ดาวเคราะห์ใกล้สายตา 1 ดวง (วนซ้ำจาก bg_03 ถึง bg_06)
-    """
 
     def __init__(self):
         # ---------- สร้าง layer แบบ tile ----------
@@ -160,34 +151,32 @@ class BackgroundManager:
 
         # ---------- เตรียมภาพ planet ใกล้สายตา ----------
         self.planet_base_images: list[pygame.Surface] = []
+        loaded_keys = [] 
         base_scale = PLANET_CONFIG.get("base_scale", 0.5)
         for key in PLANET_CONFIG.get("image_keys", []):
             img = ResourceManager.get_image(key)
             if img is not None:
-                self.planet_base_images.append(self._scale(img, base_scale))
-            else:
-                 print(f"DEBUG: Could not load planet image for key: {key}") 
-
+                scaled_img = self._scale(img, base_scale)
+                if scaled_img is not None:
+                    self.planet_base_images.append(scaled_img)
+                    loaded_keys.append(key) 
+            
         num_loaded = len(self.planet_base_images)
-        print(f"DEBUG: Successfully loaded {num_loaded} planet image(s) from a possible {len(PLANET_CONFIG.get('image_keys', []))}")
+        # ลบ Debug Prints ออกเพื่อให้โค้ดดูสะอาดขึ้น
 
         if num_loaded == 0:
             print("WARNING: No planet base images were loaded. Close planets will not appear.")
 
-        # ใช้ค่าที่ปรับจูน
         self.planet_min_speed = PLANET_CONFIG.get("min_speed", 40.0) 
         self.planet_max_speed = PLANET_CONFIG.get("max_speed", 60.0) 
         self.planet_scale_range = PLANET_CONFIG.get("scale_range", (0.9, 1.2))
 
         self.close_planet: ParallaxSprite | None = None
         
-        # ★ ตัวแปร Index สำหรับวนซ้ำภาพ (เริ่มต้นที่ 0)
+        # ตัวแปรสำหรับวนซ้ำภาพ
         self.planet_index = 0
 
         self._spawn_close_planet()
-        
-        if self.close_planet is not None:
-             print(f"DEBUG: Close Planet spawned. Initial Rect: {self.close_planet.rect}")
 
 
     # ------------------------------------------------
@@ -211,14 +200,9 @@ class BackgroundManager:
 
     def draw(self, screen: pygame.Surface):
         
-        # วาดดาว/ดาวเคราะห์ใกล้สายตา 'ก่อน' Tiled Layer อื่นๆ (ลบ .alive() ออกแล้ว)
         if self.close_planet is not None:
             screen.blit(self.close_planet.image, self.close_planet.rect)
             
-            # ลบ Debug Bounding Box ออก
-
-
-        # 1) วาด Tiled layer ไกล → ใกล้ (ตามลำดับ config)
         for cfg in BACKGROUND_LAYERS:
             name = cfg["name"]
             layer = self.layers.get(name)
@@ -233,22 +217,25 @@ class BackgroundManager:
         if not self.planet_base_images:
             return
 
-        # ลบ .alive() ออก
         if self.close_planet is None:
             self._spawn_close_planet()
             return
         
         self.close_planet.update(dt)
-        # ParallaxSprite.update() จะจัดการ reset ตำแหน่งเองเมื่อหลุดจอ
+
+        # ★★★ แก้ไข: ใช้ SCREEN_HEIGHT แทน self.screen_h ★★★
+        if self.close_planet.rect.top > SCREEN_HEIGHT:
+            self.close_planet = None 
+
 
     def _spawn_close_planet(self):
         if not self.planet_base_images:
             return
-
-        # ★ การแก้ไข: เลือกภาพตามดัชนีแทน random.choice()
+        
+        # เลือกภาพตามดัชนีที่กำหนด
         img = self.planet_base_images[self.planet_index]
         
-        # ★ การแก้ไข: เลื่อนดัชนีไปภาพถัดไป และวนกลับไป 0 เมื่อถึงปลายลิสต์
+        # เลื่อนดัชนีไปภาพถัดไป และวนกลับไป 0 เมื่อถึงปลายลิสต์
         self.planet_index = (self.planet_index + 1) % len(self.planet_base_images)
 
         planet = ParallaxSprite(
