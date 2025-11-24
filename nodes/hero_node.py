@@ -80,6 +80,19 @@ class HeroNode(AnimationNode):
         """
         self.weapon_mode = "laser"
         self.weapon_timer = max(self.weapon_timer, duration)
+    
+    # -------------------------------------------------
+    # เรียกตอนเก็บไอเท็ม Buckshot
+    # -------------------------------------------------
+    def activate_buckshot(self, duration: float = 5.0):
+        """
+        เปิดโหมดยิงกระสุนกระจาย (buckshot) ชั่วคราว
+        ใช้ร่วมกับการยิง BulletNode ใน main.py
+        """
+        self.weapon_mode = "buckshot"
+        # ถ้ามีเวลาโหมดพิเศษอยู่แล้ว ให้ต่อเวลาใช้ค่ามากสุด
+        self.weapon_timer = max(self.weapon_timer, duration)
+
 
     # -------------------------------------------------
     # ฟิสิกส์พื้นฐาน
@@ -136,11 +149,12 @@ class HeroNode(AnimationNode):
             self._update_max_speed()
 
         # ---------- อัปเดต WEAPON MODE TIMER ----------
-        if self.weapon_mode == "laser":
+        if self.weapon_mode in ("laser", "buckshot"):
             self.weapon_timer -= dt
             if self.weapon_timer <= 0:
                 self.weapon_mode = "normal"
                 self.weapon_timer = 0.0
+
 
         # ---------- ฟิสิกส์การเคลื่อนที่ ----------
         if direction.length_squared() > 0:

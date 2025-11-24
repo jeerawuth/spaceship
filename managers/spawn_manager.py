@@ -5,6 +5,7 @@ from nodes.meteor_node import MeteorNode
 from nodes.item_node import ItemNode
 from nodes.speed_item_node import SpeedItemNode
 from nodes.laser_item_node import LaserItemNode
+from nodes.buckshot_item_node import BuckshotItemNode 
 
 
 class SpawnManager:
@@ -81,6 +82,8 @@ class SpawnManager:
                 item = SpeedItemNode()
             elif item_type == "laser":
                 item = LaserItemNode()
+            elif item_type == "buckshot":
+                item = BuckshotItemNode()
             else:
                 # กันพังกรณี config พิมพ์ผิด
                 item = ItemNode("single")

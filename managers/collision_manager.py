@@ -122,7 +122,7 @@ class CollisionManager:
         return score
 
     # -------------------------------------------------
-    # 5) Hero vs Item (Drone / Shield / Speed / Laser)
+    # 5) Hero vs Item (Drone / Shield / Speed / Laser / Buckshot)
     # -------------------------------------------------
     @staticmethod
     def handle_hero_item_collisions(
@@ -172,6 +172,11 @@ class CollisionManager:
                 elif item_type == "laser":
                     if hasattr(hero, "activate_laser"):
                         hero.activate_laser(duration=5.0)
+                
+                # buckshot
+                elif item_type == "buckshot":
+                    if hasattr(hero, "activate_buckshot"):
+                        hero.activate_buckshot(duration=5.0)
 
     # -------------------------------------------------
     # 6) Shield vs Meteor

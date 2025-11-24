@@ -199,25 +199,59 @@ class Game:
         if self.game_state == GAME_STATE_PLAYING and self.hero and self.hero.alive():
             move_dir = InputManager.get_move_direction()
 
-            # ---------- ยิงกระสุนปกติ ----------
+            # -------------------------------
+            # จัดการ cooldown ร่วมกันทั้ง normal / buckshot
+            # -------------------------------
             self.bullet_cooldown -= dt
-            if (
-                keys[pygame.K_SPACE]
-                and self.bullet_cooldown <= 0
-                and getattr(self.hero, "weapon_mode", "normal") == "normal"
-            ):
-                bullet_pos = self.hero.rect.midtop
-                bullet = BulletNode(bullet_pos)
-                self.bullets.add(bullet)
+            if self.bullet_cooldown < 0:
+                self.bullet_cooldown = 0
 
-                self.bullet_cooldown = BULLET_COOLDOWN
-                bullet_sound = ResourceManager.get_sound("bullet")
-                SoundManager.play(
-                    bullet_sound,
-                    volume=0.8,
-                    max_simultaneous=8,
-                    priority=7,
-                )
+            # กด SPACE แล้วค่อยดูว่าจะยิงแบบไหน
+            if keys[pygame.K_SPACE] and self.bullet_cooldown <= 0:
+                weapon_mode = getattr(self.hero, "weapon_mode", "normal")
+
+                # -------------------------------
+                # โหมด BUCKSHOT: ยิงกระจาย 5 นัด
+                # -------------------------------
+                if weapon_mode == "buckshot":
+                    # แนวคิดแบบเกมชั้นนำ: ยิงเป็นพัดกว้างด้านหน้า
+                    # ที่นี่ทำแบบ "กระจายแนวนอน" โดยใช้ BulletNode เดิม
+                    offsets = [-40, -20, 0, 20, 40]  # px จาก center ของยาน
+                    for dx in offsets:
+                        bullet_pos = (self.hero.rect.centerx + dx, self.hero.rect.top)
+                        bullet = BulletNode(bullet_pos)
+                        self.bullets.add(bullet)
+
+                    # ให้คูลดาวน์ 1 นัด / BULLET_COOLDOWN วินาที
+                    self.bullet_cooldown = BULLET_COOLDOWN
+
+                    bullet_sound = ResourceManager.get_sound("bullet")
+                    SoundManager.play(
+                        bullet_sound,
+                        volume=0.8,
+                        max_simultaneous=8,
+                        priority=7,
+                    )
+
+                # -------------------------------
+                # โหมดปกติ: ยิงกระสุนเดี่ยว
+                # -------------------------------
+                elif weapon_mode == "normal":
+                    bullet_pos = self.hero.rect.midtop
+                    bullet = BulletNode(bullet_pos)
+                    self.bullets.add(bullet)
+
+                    self.bullet_cooldown = BULLET_COOLDOWN
+
+                    bullet_sound = ResourceManager.get_sound("bullet")
+                    SoundManager.play(
+                        bullet_sound,
+                        volume=0.8,
+                        max_simultaneous=8,
+                        priority=7,
+                    )
+
+                # ถ้าเป็น laser ก็ไม่ยิง BulletNode
         else:
             move_dir = pygame.math.Vector2(0, 0)
 
@@ -235,6 +269,7 @@ class Game:
                 beam.kill()
 
         return move_dir
+
 
     def update_stage_and_boss(self, dt: float):
         """ส่วนเดิม: เวลา + เปลี่ยนด่าน + spawn boss"""
