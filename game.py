@@ -246,7 +246,7 @@ class Game:
                     bullet_sound = ResourceManager.get_sound("bullet")
                     SoundManager.play(
                         bullet_sound,
-                        volume=0.8,
+                        volume=0.5,
                         max_simultaneous=8,
                         priority=7,
                     )

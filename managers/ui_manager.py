@@ -52,7 +52,7 @@ class UIManager:
     def _draw_hud(self, screen, hero, score: int, current_stage: int, drones, shields):
         """
         วาด Stage, Score, และ 'จำนวนไอเท็มที่กำลังทำงานอยู่ในปัจจุบัน'
-        เช่น จำนวน Drone, จำนวน Shield, Speed / Laser ที่ Active อยู่
+        เช่น จำนวน Drone, จำนวน Shield, Speed / Laser / Buckshot ที่ Active อยู่
         """
         if drones is None:
             drones = []
@@ -107,6 +107,10 @@ class UIManager:
         laser_active = (weapon_mode == "laser")
         laser_count = 1 if laser_active else 0
 
+        # 5) Buckshot: weapon_mode == "buckshot"
+        buckshot_active = (weapon_mode == "buckshot")
+        buckshot_count = 1 if buckshot_active else 0
+
         # ---------- วาด HUD แสดงตัวเลข ----------
 
         hud_y += 25
@@ -124,11 +128,13 @@ class UIManager:
         hud_y += 22
         text_weapons_2 = self.font_small.render(
             f"Speed: {speed_count}  "
-            f"Laser: {laser_count}",
+            f"Laser: {laser_count}  "
+            f"Buck: {buckshot_count}",
             True,
             (255, 255, 255),
         )
         screen.blit(text_weapons_2, (10, hud_y))
+
 
     def _draw_boss_hp_bar(
         self,
