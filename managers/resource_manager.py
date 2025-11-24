@@ -6,17 +6,23 @@ import os
 # -----------------------------------------
 #  ค่า scale สำหรับ asset ต่าง ๆ
 # -----------------------------------------
-HERO_SCALE       = 0.12
+HERO_SCALE       = 0.12         # ตัว Hero
+BULLET_SCALE     = 0.10         # กระสุน Hero
+
+BOSS_SCALE       = 0.35         # ตัว Boss
+BOSS_BULLET_SCALE = 0.12        # กระสุน Boss
+
 ENEMY_SCALE      = 0.20
 METEOR_SCALE     = 0.08
-BULLET_SCALE     = 0.10          # กระสุน Hero
-BOSS_BULLET_SCALE = 0.12         # ★ กระสุน Boss
 ITEM_SCALE       = 0.10
-EXPLOSION_SCALE  = 0.20
+
 DRONE_SCALE      = 0.10
 SHIELD_SCALE     = 0.2
+
+EXPLOSION_SCALE  = 0.20
+
 SPEED_FLAME_SCALE = 0.1
-BOSS_SCALE       = 0.35
+
 
 
 def scale_image(image: pygame.Surface, scale_factor: float) -> pygame.Surface:

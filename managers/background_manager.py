@@ -15,7 +15,7 @@ BACKGROUND_LAYERS = [
     {
         "name": "far_stars",
         "image_key": "bg_01",   
-        "scale": 0.05,          
+        "scale": 1.0,          
         "speed": 8.0,           
     },
     {
